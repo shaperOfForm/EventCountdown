@@ -5,44 +5,72 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import DaysActiveCheckboxes from './DaysActiveCheckboxes';
 
-export default function DaysOffInput({ 
-  daysOff, 
-  maxDaysOff, 
-  onChangeDaysOff, 
+export default function DaysOffInput({
+  // Set default values directly in the function parameters
+  initialDaysOff = 0, // Default to 0 if not provided
+  maxDaysOff,
+  onSubmitDaysOff = null, // Default to null if not provided
   initialDaySelections = [true, true, true, true, true, false, false],
-  onDaySelectionsChange 
+  onDaySelectionsChange = null,
 }) {
+  // ---------------------------
+  // Local state: text for daysOff
+  // ---------------------------
+  const [localDaysOff, setLocalDaysOff] = useState(String(initialDaysOff));
+
+  // ---------------------------
+  // Local state: day-of-week checkboxes
+  // ---------------------------
   const [daySelections, setDaySelections] = useState(initialDaySelections);
 
+  // If parent changes `initialDaysOff` externally, sync local
+  useEffect(() => {
+    setLocalDaysOff(String(initialDaysOff));
+  }, [initialDaysOff]);
+
+  // If parent changes `initialDaySelections`, sync local
+  useEffect(() => {
+    setDaySelections(initialDaySelections);
+  }, [initialDaySelections]);
+
+  // ---------------------------
+  // When user toggles a day
+  // ---------------------------
   const handleDaySelectionChange = (index, isSelected) => {
     const updatedSelections = [...daySelections];
     updatedSelections[index] = isSelected;
     setDaySelections(updatedSelections);
-    // Notify parent component about the change
+
+    // Notify parent immediately, or you could also do this on blur if desired
     if (onDaySelectionsChange) {
       onDaySelectionsChange(updatedSelections);
     }
   };
 
-  // Sync with initialDaySelections if it changes
-  useEffect(() => {
-    setDaySelections(initialDaySelections);
-  }, [initialDaySelections]);
+  // ---------------------------
+  // Submit daysOff ONLY on blur
+  // ---------------------------
+  const handleBlur = () => {
+    if (onSubmitDaysOff) {
+      onSubmitDaysOff(localDaysOff);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Days Off:</Text>
       <TextInput
         style={styles.input}
-        value={daysOff}
-        onChangeText={onChangeDaysOff}
+        value={localDaysOff}
+        onChangeText={setLocalDaysOff} // updates local state only
+        onBlur={handleBlur} // fires callback when user clicks away
         keyboardType="numeric"
         maxLength={3}
         placeholder={`0 - ${maxDaysOff}`}
       />
       <Text style={styles.helperText}>Max Days Off: {maxDaysOff}</Text>
 
-      {/* Days Active Checkboxes */}
+      {/* Days-of-week checkboxes */}
       <DaysActiveCheckboxes
         daySelections={daySelections}
         onDaySelectionChange={handleDaySelectionChange}
@@ -52,12 +80,19 @@ export default function DaysOffInput({
 }
 
 DaysOffInput.propTypes = {
-  daysOff: PropTypes.string.isRequired,
+  // Accept either a string or number for the initialDaysOff
+  initialDaysOff: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
   maxDaysOff: PropTypes.number.isRequired,
-  onChangeDaysOff: PropTypes.func.isRequired,
+  // Called once user blurs from the TextInput
+  onSubmitDaysOff: PropTypes.func,
   initialDaySelections: PropTypes.arrayOf(PropTypes.bool),
   onDaySelectionsChange: PropTypes.func,
 };
+
+// Removed defaultProps as defaults are now handled in function parameters
 
 const styles = StyleSheet.create({
   container: {

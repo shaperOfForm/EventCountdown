@@ -40,10 +40,13 @@ export default function EventDetailPanel({
 
   const isFirstRun = useRef(true);
 
-  // Initialize local states from selectedEvent
+  // ------------------------------------
+  // 1) Initialize local states
+  // ------------------------------------
   useEffect(() => {
     if (!selectedEvent) return;
 
+    // parse the event date
     const dateObj = parseLocalDateOnly(selectedEvent.eventDate);
     if (!isNaN(dateObj)) {
       setLocalMonth(String(dateObj.getMonth() + 1).padStart(2, '0'));
@@ -51,8 +54,10 @@ export default function EventDetailPanel({
       setLocalYear(String(dateObj.getFullYear()));
     }
 
+    // daysOff
     setLocalDaysOff(selectedEvent.daysOff || 0);
 
+    // daySelections
     if (Array.isArray(selectedEvent.daySelections) && selectedEvent.daySelections.length === 7) {
       setLocalDaySelections(selectedEvent.daySelections);
     } else {
@@ -60,7 +65,9 @@ export default function EventDetailPanel({
     }
   }, [selectedEvent]);
 
-  // If local date changes, update parent (which updates storage)
+  // ------------------------------------
+  // 2) If local date changes, update parent
+  // ------------------------------------
   useEffect(() => {
     if (!selectedEvent || isFirstRun.current) {
       isFirstRun.current = false;
@@ -87,45 +94,58 @@ export default function EventDetailPanel({
     }
   }, [localMonth, localDay, localYear, selectedEvent, currentTime, updateEventDate]);
 
-  // Always compute countdown from local states
+  // ------------------------------------
+  // 3) Compute local countdown
+  // ------------------------------------
   const localCountdown = useMemo(() => {
     if (!selectedEvent) return null;
-    const constructedDateStr = buildDateString(localMonth, localDay, localYear);
-
+    const dateStr = buildDateString(localMonth, localDay, localYear);
     return computeAdjustedTime(
-      constructedDateStr,
+      dateStr,
       parseInt(localDaysOff, 10) || 0,
       localDaySelections,
       currentTime
     );
   }, [selectedEvent, localMonth, localDay, localYear, localDaysOff, localDaySelections, currentTime]);
 
-  // Toggle daySelections -> update local + parent
-  const handleDaySelectionsChange = (index, isSelected) => {
-    const updated = [...localDaySelections];
-    updated[index] = isSelected;
-    setLocalDaySelections(updated);
+  // ------------------------------------
+  // 4) Day-of-week checkboxes -> update parent
+  // ------------------------------------
+  const handleDaySelectionsChange = (updatedSelections) => {
+    setLocalDaySelections(updatedSelections);
 
+    // reflect in parent
     if (selectedEvent) {
-      updateDaySelection(selectedEvent.id, index, isSelected);
+      updatedSelections.forEach((isSelected, index) => {
+        // you can call updateDaySelection for each changed index
+        updateDaySelection(selectedEvent.id, index, isSelected);
+      });
     }
   };
 
-  // DaysOff -> update local + parent
-  const handleDaysOffChange = (newValue) => {
-    setLocalDaysOff(newValue);
+  // ------------------------------------
+  // 5) DaysOff -> update local
+  //    (called only on blur from DaysOffInput)
+  // ------------------------------------
+  const handleDaysOffSubmit = (newVal) => {
+    setLocalDaysOff(newVal);
     if (selectedEvent) {
-      updateDaysOff(selectedEvent.id, parseInt(newValue, 10) || 0);
+      updateDaysOff(selectedEvent.id, parseInt(newVal, 10) || 0);
     }
   };
 
-  // Pass latest localCountdown when toggling homepage
+  // ------------------------------------
+  // 6) Toggle homepage
+  // ------------------------------------
   const handleToggleHomepage = () => {
     if (selectedEvent && localCountdown) {
       toggleHomepage(selectedEvent.id, localCountdown);
     }
   };
 
+  // ------------------------------------
+  // If no event
+  // ------------------------------------
   if (!selectedEvent) {
     return (
       <Animated.View style={[styles.container, { transform: [{ translateX: slideAnimation }] }]}>
@@ -137,6 +157,9 @@ export default function EventDetailPanel({
     );
   }
 
+  // ------------------------------------
+  // Render
+  // ------------------------------------
   return (
     <TouchableWithoutFeedback onPress={closePanel}>
       <View style={styles.overlay}>
@@ -162,15 +185,30 @@ export default function EventDetailPanel({
                 }}
               />
 
+              {/* DaysActiveCheckboxes can still update parent immediately */}
               <DaysActiveCheckboxes
                 daySelections={localDaySelections}
-                onDaySelectionChange={handleDaySelectionsChange}
+                onDaySelectionChange={(index, isSelected) => {
+                  const copy = [...localDaySelections];
+                  copy[index] = isSelected;
+                  handleDaySelectionsChange(copy);
+                }}
               />
 
+              {/* -----------
+                  DaysOffInput updated to submit on blur
+                  ----------- */}
               <DaysOffInput
-                daysOff={String(localDaysOff)}
+                // pass localDaysOff to the child as "initial"
+                initialDaysOff={String(localDaysOff)}
                 maxDaysOff={9999}
-                onChangeDaysOff={handleDaysOffChange}
+                // only update parent (and local) after blur
+                onSubmitDaysOff={handleDaysOffSubmit}
+                // pass checkboxes if you prefer, or skip if you handle them separately
+                initialDaySelections={localDaySelections}
+                onDaySelectionsChange={(updatedSelections) => {
+                  handleDaySelectionsChange(updatedSelections);
+                }}
               />
 
               <HomepageCheckbox

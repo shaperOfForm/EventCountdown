@@ -141,6 +141,8 @@ const styles = StyleSheet.create({
     color: '#ff9e9e', // red color for highlight
     fontSize: 14,
     marginTop: 5,
+    fontWeight: 'bold',
+    fontStyle: 'italic',
   },
   eventActions: {
     flexDirection: 'row',
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     padding: 7,
     borderRadius: 5,
     marginRight: 5,
-    backgroundColor: '#999',
+    backgroundColor: '#999fff',
   },
   buttonText: {
     opacity: 1,
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 8,
     borderRadius: 5,
-    backgroundColor: '#FFCCCC',
+    backgroundColor: '#999fff',
   },
   deleteButtonText: {
     color: '#FF0000',
