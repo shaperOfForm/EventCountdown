@@ -108,6 +108,22 @@ export default function EventDetailPanel({
     );
   }, [selectedEvent, localMonth, localDay, localYear, localDaysOff, localDaySelections, currentTime]);
 
+  const rawCountdown = useMemo(() => {
+    if (!selectedEvent) return null;
+    const dateStr = buildDateString(localMonth, localDay, localYear);
+    return computeAdjustedTime(
+      dateStr,
+      0, // ignore the days off input here
+      localDaySelections,
+      currentTime
+    );
+  }, [selectedEvent, localMonth, localDay, localYear, localDaySelections, currentTime]);
+  
+  // Compute maxDaysOff based on totalDays (one less than totalDays)
+  const maxDaysOff = rawCountdown && rawCountdown.totalDays
+    ? rawCountdown.totalDays
+    : 0;
+
   // ------------------------------------
   // 4) Day-of-week checkboxes -> update parent
   // ------------------------------------
@@ -185,6 +201,22 @@ export default function EventDetailPanel({
                 }}
               />
 
+              {/* -----------
+                  DaysOffInput updated to submit on blur
+                  ----------- */}
+              <DaysOffInput
+                // pass localDaysOff to the child as "initial"
+                initialDaysOff={String(localDaysOff)}
+                maxDaysOff={maxDaysOff}
+                // only update parent (and local) after blur
+                onSubmitDaysOff={handleDaysOffSubmit}
+                // pass checkboxes if you prefer, or skip if you handle them separately
+                initialDaySelections={localDaySelections}
+                onDaySelectionsChange={(updatedSelections) => {
+                  handleDaySelectionsChange(updatedSelections);
+                }}
+              />
+
               {/* DaysActiveCheckboxes can still update parent immediately */}
               <DaysActiveCheckboxes
                 daySelections={localDaySelections}
@@ -192,22 +224,6 @@ export default function EventDetailPanel({
                   const copy = [...localDaySelections];
                   copy[index] = isSelected;
                   handleDaySelectionsChange(copy);
-                }}
-              />
-
-              {/* -----------
-                  DaysOffInput updated to submit on blur
-                  ----------- */}
-              <DaysOffInput
-                // pass localDaysOff to the child as "initial"
-                initialDaysOff={String(localDaysOff)}
-                maxDaysOff={9999}
-                // only update parent (and local) after blur
-                onSubmitDaysOff={handleDaysOffSubmit}
-                // pass checkboxes if you prefer, or skip if you handle them separately
-                initialDaySelections={localDaySelections}
-                onDaySelectionsChange={(updatedSelections) => {
-                  handleDaySelectionsChange(updatedSelections);
                 }}
               />
 
@@ -256,7 +272,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   container: {
     position: 'absolute',
@@ -264,10 +280,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     width: '80%',
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(62, 16, 109, 0.95)', // tinted purple,
+    borderTopLeftRadius: 15,  // Rounded corners on the left
+    borderBottomLeftRadius: 15,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: -2, height: 0 },
+    shadowOffset: { width: -2, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 5,
@@ -279,6 +297,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#555',
+    color: '#eee',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });

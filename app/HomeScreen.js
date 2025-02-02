@@ -408,7 +408,7 @@ export default function HomeScreen() {
   // --------------------------------------------------------------
   return (
     <LinearGradient
-      colors={['#5A1E99', '#4B1382']}
+      colors={['#792DE7', '#4B1382']}
       style={styles.gradientBackground}
     >
       <View style={styles.container}>
@@ -459,6 +459,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 10,
+    padding: 5,
   },
 });

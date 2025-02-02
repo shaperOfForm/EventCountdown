@@ -50,36 +50,35 @@ export default function AddEventForm({
 
 const styles = StyleSheet.create({
   formContainer: {
-    backgroundColor: '#3E106D',
+    backgroundColor: 'rgba(62, 16, 109, 0.4)',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 10,
     // Subtle shadow / elevation for a "card" look
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   formHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 10,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#BFC7FF', // Light purple for inputs
+    backgroundColor: '#D9E3F0', // Light purple for inputs
     color: '#000',
     borderRadius: 8,
     padding: 10,
-    marginVertical: 5,
+    marginVertical: 0,
     fontSize: 16,
   },
   addButton: {
-    backgroundColor: '#BFC7FF', // accent color
+    backgroundColor: '#BFD6FF', // accent color
     borderRadius: 8,
-    paddingVertical: 10,
+    padding: 10,
     marginTop: 10,
     alignItems: 'center',
   },

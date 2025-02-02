@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     fontSize: 16,
+    color: '#FFFFFF'
   },
   dateInputs: {
     flexDirection: 'row',
@@ -217,17 +218,19 @@ const styles = StyleSheet.create({
   },
   dateInput: {
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     padding: 8,
     borderRadius: 5,
     width: 60,
     textAlign: 'center',
     fontSize: 16,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: '#FFF',
+    marginRight: 2,
   },
   slash: {
     fontSize: 20,
     marginHorizontal: 2,
-    color: '#333',
+    color: '#FFF',
   },
 });

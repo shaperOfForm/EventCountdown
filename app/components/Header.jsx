@@ -20,10 +20,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+    backGroundColor: 'transparent',
+    paddingVertical: 6,
+    borderBottomColor: 'rgba(255,255,255,0.3)',
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   closeButton: {
     fontSize: 24,

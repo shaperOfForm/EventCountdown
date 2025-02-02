@@ -7,6 +7,7 @@ import { computeAdjustedTime } from './utils/dateUtils';
 import { parseISO, isValid, isFuture } from 'date-fns';
 import TimeRemaining from './components/TimeRemaining';
 import { markRedirected } from './utils/redirectFlag'; // ADDED
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function FullScreenCountdown() {
   const router = useRouter();
@@ -150,14 +151,23 @@ export default function FullScreenCountdown() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{eventName || 'Unnamed Event'}</Text>
-      <Text style={styles.date}>{eventDate || 'Invalid Date'}</Text>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#4B1382', '#3E106D']}
+        style={styles.container}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>{eventName || 'Unnamed Event'}</Text>
+          <Text style={styles.date}>{eventDate || 'Invalid Date'}</Text>
 
-      {/* Display finalCountdown using TimeRemaining */}
-      <TimeRemaining timeRemaining={finalCountdown} />
+          {/* Display finalCountdown using TimeRemaining */}
+          <TimeRemaining timeRemaining={finalCountdown} />
 
-      <Button title="Back to Main Menu" onPress={handleBackToMain} />
+          <View style={{ height: 100 }} >
+            <Button title="Back to Main Menu" onPress={handleBackToMain} />
+          </View>
+        </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -169,6 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 0,
   },
   title: {
     fontSize: 32,

@@ -53,14 +53,15 @@ export default function EventList({
 const styles = StyleSheet.create({
   eventContainer: {
     flex: 1,
-    backgroundColor: 'rgba(62, 16, 109, 0.5)', // partial opacity purple
+    backgroundColor: 'transparent', // partial opacity purple
     borderRadius: 10,
     padding: 10,
     marginBottom: 20,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#ECECEC',
+    color: '#EFEFEF',
     fontStyle: 'italic',
+    marginTop: 20,
   },
 });

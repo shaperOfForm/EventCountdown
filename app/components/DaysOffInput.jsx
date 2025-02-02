@@ -67,14 +67,9 @@ export default function DaysOffInput({
         keyboardType="numeric"
         maxLength={3}
         placeholder={`0 - ${maxDaysOff}`}
+        placeholderTextColor={'#888'}
       />
       <Text style={styles.helperText}>Max Days Off: {maxDaysOff}</Text>
-
-      {/* Days-of-week checkboxes */}
-      <DaysActiveCheckboxes
-        daySelections={daySelections}
-        onDaySelectionChange={handleDaySelectionChange}
-      />
     </View>
   );
 }
@@ -99,16 +94,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   label: {
+    color: '#FFF',
     fontWeight: 'bold',
     marginBottom: 5,
     fontSize: 16,
   },
   input: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    color: '#FFF',
     borderWidth: 1,
-    borderColor: '#999',
-    padding: 8,
+    borderColor: 'rgba(255,255,255,0.4)',
     borderRadius: 5,
-    width: '100%',
+    padding: 8,
+    marginBottom: 10,
+    fontSize: 16,
   },
   helperText: {
     marginTop: 5,

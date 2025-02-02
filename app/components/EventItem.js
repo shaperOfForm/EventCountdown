@@ -102,18 +102,16 @@ const styles = StyleSheet.create({
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3E106D',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: 'rgba(62, 16, 109, 0.3)',
+    padding: 10,
+    borderRadius: 10,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#999',
     // small card shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   dragHandle: {
     padding: 5,
@@ -123,7 +121,7 @@ const styles = StyleSheet.create({
   },
   dragIcon: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 20,
   },
   eventDetails: {
     flex: 1,
@@ -134,14 +132,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   eventDate: {
-    color: '#CCCCCC',
+    color: '#DDD',
     fontSize: 14,
   },
   countdown: {
-    color: '#ff9e9e', // red color for highlight
+    color: '#ff9e9e', // salmon color for highlight
     fontSize: 14,
     marginTop: 5,
-    fontWeight: 'bold',
     fontStyle: 'italic',
   },
   eventActions: {
@@ -150,24 +147,25 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   detailsButton: {
-    padding: 7,
-    borderRadius: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 11,
+    borderRadius: 8,
     marginRight: 5,
-    backgroundColor: '#999fff',
+    backgroundColor: '#c4a2f5',
   },
   buttonText: {
-    opacity: 1,
     color: '#4B1382',
     fontWeight: 'bold',
-    fontSize: 24,
+    fontSize: 16,
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 5,
-    backgroundColor: '#999fff',
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#ff6b6b',
   },
   deleteButtonText: {
-    color: '#FF0000',
+    color: '#FFF',
     fontWeight: 'bold',
     fontSize: 22,
   },

@@ -184,11 +184,14 @@ const styles = StyleSheet.create({
   pickerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   picker: {
     flex: 1,
     marginHorizontal: 5,
     backgroundColor: '#BFC7FF', // consistent with input color
     color: '#000',
+    borderRadius: 6,
+    overflow: 'hidden', // iOS needs this to actually see the radius
   },
 });

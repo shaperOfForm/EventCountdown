@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -44,6 +45,7 @@ const styles = StyleSheet.create({
   dayLabel: {
     marginLeft: 8,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   checkbox: {
     // Increase the size of the checkbox for better touch targets
