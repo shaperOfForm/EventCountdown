@@ -1,17 +1,33 @@
 // app/layout.jsx
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
-import { ThemeProvider } from './ThemeContext'; // Adjust the path if needed
+import { HueOffsetProvider, HueOffsetContext } from './HueOffsetContext';
+
+function HueOffsetSlider() {
+  const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
+  return (
+    <View style={styles.sliderOverlay}>
+      <View style={styles.sliderWrapper}>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={355} // Hue offset in degrees
+          step={1}
+          value={hueOffset}
+          onValueChange={setHueOffset}
+          minimumTrackTintColor="#fff"
+          maximumTrackTintColor="#000"
+        />
+      </View>
+    </View>
+  );
+}
 
 export default function Layout() {
-  // The slider controls a hue offset in degrees (0–355)
-  const [hueOffset, setHueOffset] = useState(0);
-
   return (
-    // Wrap the entire app with the ThemeProvider so every screen gets the theme.
-    <ThemeProvider hueOffset={hueOffset}>
+    <HueOffsetProvider>
       <View style={styles.container}>
         {/* Header with design image */}
         <View style={styles.headerContainer}>
@@ -22,35 +38,22 @@ export default function Layout() {
           />
         </View>
 
-        {/* Routed content (HomeScreen and others) */}
+        {/* Routed content (e.g. HomeScreen and others) */}
         <View style={styles.contentContainer}>
           <Stack screenOptions={{ headerShown: false }} />
         </View>
 
-        {/* Slider overlay in the middle of the screen */}
-        <View style={styles.sliderOverlay}>
-          <View style={styles.sliderWrapper}>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={355} // Hue offset in degrees
-              step={1}           // Ensure discrete steps; helps with visual alignment
-              value={hueOffset}  // Controlled value starting at 0
-              onValueChange={setHueOffset}
-              minimumTrackTintColor="#fff"
-              maximumTrackTintColor="#000"
-            />
-          </View>
-        </View>
+        {/* Slider overlay */}
+        <HueOffsetSlider />
       </View>
-    </ThemeProvider>
+    </HueOffsetProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
-    position: 'relative', // Needed for absolute positioning of slider overlay
+    position: 'relative', // Enables absolute positioning for slider overlay
   },
   headerContainer: {
     height: 80,
@@ -68,12 +71,12 @@ const styles = StyleSheet.create({
     top: '50%',
     left: 0,
     right: 0,
-    alignItems: 'center',    // Center horizontally
-    justifyContent: 'center' // Center vertically
+    alignItems: 'center', // Center horizontally
+    justifyContent: 'center', // Center vertically
   },
   sliderWrapper: {
-    width: '80%', // Adjust as needed
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent for visibility
+    width: '80%',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent background for visibility
     borderRadius: 5,
     padding: 10,
   },

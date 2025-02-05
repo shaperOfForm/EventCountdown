@@ -1,17 +1,16 @@
+// components/DaysActiveCheckboxes.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import CheckBox from 'expo-checkbox';
+import { useThemedColor } from '../useThemedColor';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/**
- * @param {boolean[]} daySelections - array of 7 booleans
- * @param {function} onDaySelectionChange - callback(index, newValue)
- */
 export default function DaysActiveCheckboxes({ daySelections, onDaySelectionChange }) {
+  const labelColor = useThemedColor('#FFFFFF');
   return (
     <View>
-      <Text style={styles.label}>Days Active:</Text>
+      <Text style={[styles.label, { color: labelColor }]}>Days Active:</Text>
       {DAYS_OF_WEEK.map((day, index) => (
         <TouchableOpacity
           key={index}
@@ -23,7 +22,7 @@ export default function DaysActiveCheckboxes({ daySelections, onDaySelectionChan
             onValueChange={(newValue) => onDaySelectionChange(index, newValue)}
             style={styles.checkbox}
           />
-          <Text style={styles.dayLabel}>{day}</Text>
+          <Text style={[styles.dayLabel, { color: labelColor }]}>{day}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -35,7 +34,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     fontSize: 16,
-    color: '#FFFFFF',
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -45,10 +43,8 @@ const styles = StyleSheet.create({
   dayLabel: {
     marginLeft: 8,
     fontSize: 16,
-    color: '#FFFFFF',
   },
   checkbox: {
-    // Increase the size of the checkbox for better touch targets
     width: 24,
     height: 24,
   },

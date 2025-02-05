@@ -3,32 +3,26 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
 import { computeAdjustedTime } from '../utils/dateUtils';
+import { useThemedColor } from '../useThemedColor';
 
-/**
- * Format a date string in the format "YYYY-MM-DDT08:00:00" into "MM-DD-YYYY"
- */
 function formatDateMMDDYYYY(isoDateStr) {
   const dateObj = parseISO(isoDateStr);
-  if (!isValid(dateObj)) {
-    return isoDateStr; // fallback if invalid
-  }
+  if (!isValid(dateObj)) return isoDateStr;
   const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
   const dd = String(dateObj.getDate()).padStart(2, '0');
   const yyyy = dateObj.getFullYear();
   return `${mm}-${dd}-${yyyy}`;
 }
 
-export default function EventItem({
-  event,
-  toggleSlidePanel,
-  deleteEvent,
-  drag,
-  currentTime,
-}) {
-  // 1) Format the display date.
-  const displayDate = formatDateMMDDYYYY(event.eventDate);
+export default function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) {
+  const white = useThemedColor('#FFFFFF');
+  const lightGray = useThemedColor('#DDD');
+  const countdownColor = useThemedColor('#ff9e9e');
+  const detailsButtonBg = useThemedColor('#c4a2f5');
+  const buttonTextColor = useThemedColor('#4B1382');
+  const deleteButtonBg = useThemedColor('#ff6b6b');
 
-  // 2) Compute the countdown to 8 AM.
+  const displayDate = formatDateMMDDYYYY(event.eventDate);
   const countdownResult = computeAdjustedTime(
     event.eventDate,
     event.daysOff || 0,
@@ -38,10 +32,8 @@ export default function EventItem({
     currentTime
   );
 
-  // 3) Build the countdown content.
   let countdownContent;
   if (typeof countdownResult === 'string') {
-    // Countdown is complete.
     countdownContent = countdownResult;
   } else {
     const { years, months, weeks, days, hours, totalDays } = countdownResult;
@@ -52,7 +44,6 @@ export default function EventItem({
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     const countdownString = parts.length > 0 ? parts.join(',') : '<1h';
-
     let displayTotalDays;
     if (totalDays === 0 && (years + months + weeks + days + hours) > 0) {
       displayTotalDays = '<1 day';
@@ -61,35 +52,28 @@ export default function EventItem({
     } else {
       displayTotalDays = `${totalDays} total days`;
     }
-
     countdownContent = `${countdownString} - (${displayTotalDays})`;
   }
 
   return (
     <View style={styles.eventItem}>
-      {/* Draggable handle */}
       <TouchableOpacity onLongPress={drag} style={styles.dragHandle}>
-        <Text style={styles.dragIcon}>≡</Text>
+        <Text style={[styles.dragIcon, { color: white }]}>≡</Text>
       </TouchableOpacity>
-
-      {/* Event details */}
       <View style={styles.eventDetails}>
-        <Text style={styles.eventName}>{event.name}</Text>
-        <Text style={styles.eventDate}>{displayDate}</Text>
-        <Text style={styles.countdown}>{countdownContent}</Text>
+        <Text style={[styles.eventName, { color: white }]}>{event.name}</Text>
+        <Text style={[styles.eventDate, { color: lightGray }]}>{displayDate}</Text>
+        <Text style={[styles.countdown, { color: countdownColor }]}>{countdownContent}</Text>
       </View>
-
-      {/* Action buttons */}
       <View style={styles.eventActions}>
         <TouchableOpacity
-          style={styles.detailsButton}
+          style={[styles.detailsButton, { backgroundColor: detailsButtonBg }]}
           onPress={() => toggleSlidePanel(event, countdownResult)}
         >
-          <Text style={styles.buttonText}>⚙</Text>
+          <Text style={[styles.buttonText, { color: buttonTextColor }]}>⚙</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={[styles.deleteButton]}
           onPress={() => deleteEvent(event.id)}
         >
           <Text style={styles.deleteButtonText}>X</Text>
@@ -107,7 +91,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
-    // Shadow for a small card effect.
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -121,7 +104,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dragIcon: {
-    color: '#FFFFFF',
     fontSize: 20,
   },
   eventDetails: {
@@ -129,15 +111,12 @@ const styles = StyleSheet.create({
   },
   eventName: {
     fontWeight: 'bold',
-    color: '#FFFFFF',
     fontSize: 16,
   },
   eventDate: {
-    color: '#DDD',
     fontSize: 14,
   },
   countdown: {
-    color: '#ff9e9e',
     fontSize: 14,
     marginTop: 5,
     fontStyle: 'italic',
@@ -152,10 +131,8 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 8,
     marginRight: 5,
-    backgroundColor: '#c4a2f5',
   },
   buttonText: {
-    color: '#4B1382',
     fontWeight: 'bold',
     fontSize: 16,
   },

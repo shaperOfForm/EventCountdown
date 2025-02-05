@@ -2,28 +2,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
+import { useThemedColor } from '../useThemedColor';
 
-/**
- * TimeRemaining Component
- * Displays the countdown in the format:
- * [# of years]y,[# of months]m,[# of weeks]w,[# of days]d,[# of hours]h - ([# of total days] total days)
- *
- * If the countdown has completed, it displays "Countdown Complete!".
- *
- * @param {Object} props
- * @param {Object|string} [props.timeRemaining={}] - Contains years, months, weeks, days, hours, totalDays
- */
 export default function TimeRemaining({ timeRemaining = {} }) {
-  // If timeRemaining is a string, we assume it is the "Countdown Complete!" message.
   if (typeof timeRemaining === 'string') {
     return (
       <View style={styles.container}>
-        <Text style={styles.label}>Time Remaining:</Text>
-        <Text style={styles.value}>{timeRemaining}</Text>
+        <Text style={[styles.label, { color: useThemedColor('#FFFFFF') }]}>Time Remaining:</Text>
+        <Text style={[styles.value, { color: useThemedColor('#ff9e9e') }]}>{timeRemaining}</Text>
       </View>
     );
   }
-
   const {
     years = 0,
     months = 0,
@@ -48,10 +37,13 @@ export default function TimeRemaining({ timeRemaining = {} }) {
     displayTotalDays = `<1 total day`;
   }
 
+  const labelColor = useThemedColor('#FFFFFF');
+  const valueColor = useThemedColor('#ff9e9e');
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Time Remaining:</Text>
-      <Text style={styles.value}>
+      <Text style={[styles.label, { color: labelColor }]}>Time Remaining:</Text>
+      <Text style={[styles.value, { color: valueColor }]}>
         {countdownString} - ({displayTotalDays})
       </Text>
     </View>
@@ -80,11 +72,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#FFFFFF',
   },
   value: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#ff9e9e',
   },
 });

@@ -1,10 +1,10 @@
 // components/EventDateInputs.js
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import { Picker } from '@react-native-picker/picker';
 import { getMaxAllowableDate } from '../utils/dateUtils';
+import { useThemedColor } from '../useThemedColor';
 
 const MONTH_NAMES = [
   { label: 'January', value: '01' },
@@ -21,20 +21,9 @@ const MONTH_NAMES = [
   { label: 'December', value: '12' },
 ];
 
-// Days in each month (29 for February, handle leap year below)
 const DAYS_IN_MONTH = {
-  1: 31,
-  2: 29,
-  3: 31,
-  4: 30,
-  5: 31,
-  6: 30,
-  7: 31,
-  8: 31,
-  9: 30,
-  10: 31,
-  11: 30,
-  12: 31,
+  1: 31, 2: 29, 3: 31, 4: 30, 5: 31, 6: 30,
+  7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31,
 };
 
 export default function EventDateInputs({ month, day, year, onDateChange }) {
@@ -43,7 +32,6 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
   const maxYear = maxAllowableDate.getFullYear();
   const maxMonth = maxAllowableDate.getMonth() + 1;
   const maxDay = maxAllowableDate.getDate();
-
   const today = new Date();
   const thisYear = today.getFullYear();
   const thisMonth = today.getMonth() + 1;
@@ -56,20 +44,11 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
     const mm = parseInt(newMonth, 10);
     const dd = parseInt(newDay, 10);
     const yyyy = parseInt(newYear, 10);
-
-    if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) {
-      return;
-    }
-
+    if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return;
     let maxDays = DAYS_IN_MONTH[mm] || 31;
-    if (mm === 2 && !isLeapYear(yyyy)) {
-      maxDays = 28;
-    }
+    if (mm === 2 && !isLeapYear(yyyy)) maxDays = 28;
     let validatedDay = Math.min(dd, maxDays);
-
     const candidateDate = new Date(yyyy, mm - 1, validatedDay);
-
-    // If beyond maxAllowableDate, clamp
     if (candidateDate > maxAllowableDate) {
       onDateChange(
         String(maxMonth).padStart(2, '0'),
@@ -78,14 +57,9 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
       );
       return;
     }
-
-    // If user picks the current month & year, disallow days <= today
-    if (yyyy === thisYear && mm === thisMonth) {
-      if (validatedDay <= thisDay) {
-        validatedDay = thisDay + 1;
-      }
+    if (yyyy === thisYear && mm === thisMonth && validatedDay <= thisDay) {
+      validatedDay = thisDay + 1;
     }
-
     onDateChange(
       String(mm).padStart(2, '0'),
       String(validatedDay).padStart(2, '0'),
@@ -102,24 +76,22 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
   if (parseInt(month, 10) === 2 && !isLeapYear(parseInt(year, 10))) {
     maxDaysForMonth = 28;
   }
-
   let dayUpperBound =
     parseInt(year, 10) === maxYear && parseInt(month, 10) === maxMonth
       ? maxDay
       : maxDaysForMonth;
-
   let dayLowerBound = 1;
-  if (
-    parseInt(year, 10) === thisYear &&
-    parseInt(month, 10) === thisMonth
-  ) {
+  if (parseInt(year, 10) === thisYear && parseInt(month, 10) === thisMonth) {
     dayLowerBound = thisDay + 1;
   }
-
   const dayOptions = [];
   for (let d = dayLowerBound; d <= dayUpperBound; d++) {
     dayOptions.push(String(d).padStart(2, '0'));
   }
+
+  // Use themed colors for the pickers.
+  const inputBg = useThemedColor('#BFC7FF');
+  const textColor = useThemedColor('#000000');
 
   return (
     <View style={styles.container}>
@@ -127,39 +99,31 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
         <Picker
           selectedValue={month}
           onValueChange={(val) => validateDate(val, day, year)}
-          style={styles.picker}
+          style={[styles.picker, { backgroundColor: inputBg, color: textColor }]}
         >
           {MONTH_NAMES
             .filter((mObj) => {
               const numericMonth = parseInt(mObj.value, 10);
-              if (year === String(maxYear)) {
-                return numericMonth <= maxMonth;
-              }
+              if (year === String(maxYear)) return numericMonth <= maxMonth;
               return true;
             })
             .map((mObj) => (
-              <Picker.Item
-                key={mObj.value}
-                label={mObj.label}
-                value={mObj.value}
-              />
+              <Picker.Item key={mObj.value} label={mObj.label} value={mObj.value} />
             ))}
         </Picker>
-
         <Picker
           selectedValue={day}
           onValueChange={(val) => validateDate(month, val, year)}
-          style={styles.picker}
+          style={[styles.picker, { backgroundColor: inputBg, color: textColor }]}
         >
           {dayOptions.map((d) => (
             <Picker.Item key={d} label={d} value={d} />
           ))}
         </Picker>
-
         <Picker
           selectedValue={year}
           onValueChange={(val) => validateDate(month, day, val)}
-          style={styles.picker}
+          style={[styles.picker, { backgroundColor: inputBg, color: textColor }]}
         >
           {yearList.map((y) => (
             <Picker.Item key={y} label={y} value={y} />
@@ -189,9 +153,7 @@ const styles = StyleSheet.create({
   picker: {
     flex: 1,
     marginHorizontal: 5,
-    backgroundColor: '#BFC7FF', // consistent with input color
-    color: '#000',
     borderRadius: 6,
-    overflow: 'hidden', // iOS needs this to actually see the radius
+    overflow: 'hidden',
   },
 });

@@ -1,8 +1,8 @@
 // components/AddEventForm.js
-
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import EventDateInputs from './EventDateInputs'; // Your custom date pickers
+import EventDateInputs from './EventDateInputs';
+import { useThemedColor } from '../useThemedColor';
 
 export default function AddEventForm({
   month,
@@ -15,11 +15,16 @@ export default function AddEventForm({
   setEventName,
   onAddEvent,
 }) {
+  // Base colors as defined originally:
+  const headerColor = useThemedColor('#FFFFFF');
+  const inputBg = useThemedColor('#D9E3F0');
+  const inputText = useThemedColor('#000000');
+  const addButtonBg = useThemedColor('#BFD6FF');
+  const addButtonText = useThemedColor('#4B1382');
+
   return (
     <View style={styles.formContainer}>
-      <Text style={styles.formHeader}>Add New Event</Text>
-
-      {/* Date Inputs */}
+      <Text style={[styles.formHeader, { color: headerColor }]}>Add New Event</Text>
       <EventDateInputs
         month={month}
         day={day}
@@ -30,19 +35,15 @@ export default function AddEventForm({
           setYear(newYear);
         }}
       />
-
-      {/* Event Name Input */}
       <TextInput
         placeholder="Event Name"
         value={eventName}
         onChangeText={setEventName}
-        style={styles.input}
-        placeholderTextColor="#555"
+        style={[styles.input, { backgroundColor: inputBg, color: inputText }]}
+        placeholderTextColor={useThemedColor('#555')}
       />
-
-      {/* Add Event Button */}
-      <TouchableOpacity style={styles.addButton} onPress={onAddEvent}>
-        <Text style={styles.addButtonText}>Add Event</Text>
+      <TouchableOpacity style={[styles.addButton, { backgroundColor: addButtonBg }]} onPress={onAddEvent}>
+        <Text style={[styles.addButtonText, { color: addButtonText }]}>Add Event</Text>
       </TouchableOpacity>
     </View>
   );
@@ -50,11 +51,10 @@ export default function AddEventForm({
 
 const styles = StyleSheet.create({
   formContainer: {
-    backgroundColor: 'rgba(62, 16, 109, 0.4)',
+    backgroundColor: 'rgba(62, 16, 109, 0.4)', // Unchanged card tint (or you can theme it if desired)
     padding: 10,
     borderRadius: 12,
     marginBottom: 10,
-    // Subtle shadow / elevation for a "card" look
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -63,27 +63,21 @@ const styles = StyleSheet.create({
   formHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
     marginBottom: 10,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#D9E3F0', // Light purple for inputs
-    color: '#000',
     borderRadius: 8,
     padding: 10,
-    marginVertical: 0,
     fontSize: 16,
   },
   addButton: {
-    backgroundColor: '#BFD6FF', // accent color
     borderRadius: 8,
     padding: 10,
     marginTop: 10,
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#4B1382',
     fontWeight: 'bold',
     fontSize: 18,
   },
