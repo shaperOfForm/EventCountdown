@@ -1,3 +1,4 @@
+// components/TimeRemaining.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
@@ -5,13 +6,24 @@ import PropTypes from 'prop-types';
 /**
  * TimeRemaining Component
  * Displays the countdown in the format:
- * [# of years]y,[# of months]m,[# of weeks]w,[# of days]d,[# of hours]h - ([# of remaining days until event] total days)
+ * [# of years]y,[# of months]m,[# of weeks]w,[# of days]d,[# of hours]h - ([# of total days] total days)
+ *
+ * If the countdown has completed, it displays "Countdown Complete!".
  *
  * @param {Object} props
- * @param {Object} [props.timeRemaining] - Contains years, months, weeks, days, hours, totalDays
+ * @param {Object|string} [props.timeRemaining={}] - Contains years, months, weeks, days, hours, totalDays
  */
 export default function TimeRemaining({ timeRemaining = {} }) {
-  // Destructure with defaults to prevent crashes
+  // If timeRemaining is a string, we assume it is the "Countdown Complete!" message.
+  if (typeof timeRemaining === 'string') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>Time Remaining:</Text>
+        <Text style={styles.value}>{timeRemaining}</Text>
+      </View>
+    );
+  }
+
   const {
     years = 0,
     months = 0,
@@ -21,18 +33,14 @@ export default function TimeRemaining({ timeRemaining = {} }) {
     totalDays = 0,
   } = timeRemaining;
 
-  // Construct the countdown string without spaces between numbers and letters
-  const countdownString = [
-    years > 0 ? `${years}y` : null,
-    months > 0 ? `${months}m` : null,
-    weeks > 0 ? `${weeks}w` : null,
-    days > 0 ? `${days}d` : null,
-    hours > 0 ? `${hours}h` : null,
-  ]
-    .filter(Boolean)
-    .join(',');
+  const parts = [];
+  if (years > 0) parts.push(`${years}y`);
+  if (months > 0) parts.push(`${months}m`);
+  if (weeks > 0) parts.push(`${weeks}w`);
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  const countdownString = parts.length > 0 ? parts.join(',') : '<1h';
 
-  // Determine how to display totalDays
   let displayTotalDays = `${totalDays} total days`;
   if (totalDays > 0 && hours > 0) {
     displayTotalDays = `<${totalDays + 1} total days`;
@@ -44,21 +52,24 @@ export default function TimeRemaining({ timeRemaining = {} }) {
     <View style={styles.container}>
       <Text style={styles.label}>Time Remaining:</Text>
       <Text style={styles.value}>
-        {countdownString || '<1h'} - ({displayTotalDays})
+        {countdownString} - ({displayTotalDays})
       </Text>
     </View>
   );
 }
 
 TimeRemaining.propTypes = {
-  timeRemaining: PropTypes.shape({
-    years: PropTypes.number,
-    months: PropTypes.number,
-    weeks: PropTypes.number,
-    days: PropTypes.number,
-    hours: PropTypes.number,
-    totalDays: PropTypes.number,
-  }),
+  timeRemaining: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.shape({
+      years: PropTypes.number,
+      months: PropTypes.number,
+      weeks: PropTypes.number,
+      days: PropTypes.number,
+      hours: PropTypes.number,
+      totalDays: PropTypes.number,
+    }),
+  ]),
 };
 
 const styles = StyleSheet.create({

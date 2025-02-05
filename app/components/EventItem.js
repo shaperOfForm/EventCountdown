@@ -1,12 +1,11 @@
 // components/EventItem.js
-
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
 import { computeAdjustedTime } from '../utils/dateUtils';
 
 /**
- * Format "YYYY-MM-DDT12:00:00" -> "MM-DD-YYYY"
+ * Format a date string in the format "YYYY-MM-DDT08:00:00" into "MM-DD-YYYY"
  */
 function formatDateMMDDYYYY(isoDateStr) {
   const dateObj = parseISO(isoDateStr);
@@ -26,40 +25,44 @@ export default function EventItem({
   drag,
   currentTime,
 }) {
-  // 1) Format display date
+  // 1) Format the display date.
   const displayDate = formatDateMMDDYYYY(event.eventDate);
 
-  // 2) Compute countdown
-  const countdown = computeAdjustedTime(
+  // 2) Compute the countdown to 8 AM.
+  const countdownResult = computeAdjustedTime(
     event.eventDate,
     event.daysOff || 0,
-    event.daySelections?.length === 7
+    Array.isArray(event.daySelections) && event.daySelections.length === 7
       ? event.daySelections
       : [true, true, true, true, true, false, false],
     currentTime
   );
 
-  const { years, months, weeks, days, hours, totalDays } = countdown;
-
-  // 3) Build short countdown
-  const countdownString = [
-    years > 0 ? `${years}y` : null,
-    months > 0 ? `${months}m` : null,
-    weeks > 0 ? `${weeks}w` : null,
-    days > 0 ? `${days}d` : null,
-    hours > 0 ? `${hours}h` : null,
-  ]
-    .filter(Boolean)
-    .join(',');
-
-  // 4) Display totalDays
-  let displayTotalDays;
-  if (totalDays === 0 && (years + months + weeks + days + hours) > 0) {
-    displayTotalDays = '<1 day';
-  } else if (totalDays > 0 && hours > 0) {
-    displayTotalDays = `${totalDays + 1} total days`;
+  // 3) Build the countdown content.
+  let countdownContent;
+  if (typeof countdownResult === 'string') {
+    // Countdown is complete.
+    countdownContent = countdownResult;
   } else {
-    displayTotalDays = `${totalDays} total days`;
+    const { years, months, weeks, days, hours, totalDays } = countdownResult;
+    const parts = [];
+    if (years > 0) parts.push(`${years}y`);
+    if (months > 0) parts.push(`${months}m`);
+    if (weeks > 0) parts.push(`${weeks}w`);
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    const countdownString = parts.length > 0 ? parts.join(',') : '<1h';
+
+    let displayTotalDays;
+    if (totalDays === 0 && (years + months + weeks + days + hours) > 0) {
+      displayTotalDays = '<1 day';
+    } else if (totalDays > 0 && hours > 0) {
+      displayTotalDays = `<${totalDays + 1} total days`;
+    } else {
+      displayTotalDays = `${totalDays} total days`;
+    }
+
+    countdownContent = `${countdownString} - (${displayTotalDays})`;
   }
 
   return (
@@ -73,16 +76,14 @@ export default function EventItem({
       <View style={styles.eventDetails}>
         <Text style={styles.eventName}>{event.name}</Text>
         <Text style={styles.eventDate}>{displayDate}</Text>
-        <Text style={styles.countdown}>
-          {countdownString || '<1h'} - ({displayTotalDays})
-        </Text>
+        <Text style={styles.countdown}>{countdownContent}</Text>
       </View>
 
       {/* Action buttons */}
       <View style={styles.eventActions}>
         <TouchableOpacity
           style={styles.detailsButton}
-          onPress={() => toggleSlidePanel(event, countdown)}
+          onPress={() => toggleSlidePanel(event, countdownResult)}
         >
           <Text style={styles.buttonText}>⚙</Text>
         </TouchableOpacity>
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
-    // small card shadow
+    // Shadow for a small card effect.
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   countdown: {
-    color: '#ff9e9e', // salmon color for highlight
+    color: '#ff9e9e',
     fontSize: 14,
     marginTop: 5,
     fontStyle: 'italic',
