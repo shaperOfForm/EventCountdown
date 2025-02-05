@@ -1,5 +1,4 @@
 // components/EventList.js
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
@@ -20,17 +19,15 @@ export default function EventList({
     (event) => new Date(event.eventDate) <= maxDate
   );
 
-  const renderItem = ({ item, drag }) => {
-    return (
-      <EventItem
-        event={item}
-        toggleSlidePanel={toggleSlidePanel}
-        deleteEvent={deleteEvent}
-        drag={drag}
-        currentTime={currentTime}
-      />
-    );
-  };
+  const renderItem = ({ item, drag }) => (
+    <EventItem
+      event={item}
+      toggleSlidePanel={toggleSlidePanel}
+      deleteEvent={deleteEvent}
+      drag={drag}
+      currentTime={currentTime}
+    />
+  );
 
   return (
     <View style={styles.eventContainer}>
@@ -53,7 +50,7 @@ export default function EventList({
 const styles = StyleSheet.create({
   eventContainer: {
     flex: 1,
-    backgroundColor: 'transparent', // partial opacity purple
+    backgroundColor: 'transparent',
     borderRadius: 10,
     padding: 10,
     marginBottom: 20,

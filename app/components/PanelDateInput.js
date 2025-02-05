@@ -1,157 +1,133 @@
-import React, { useEffect, useState } from 'react';
+// components/PanelDateInput.js
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, Text } from 'react-native';
 import PropTypes from 'prop-types';
 
-/**
- * Helper function to determine if a year is a leap year.
- * @param {number} year
- * @returns {boolean}
- */
-const isLeapYear = (year) => {
+function isLeapYear(year) {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-};
+}
 
-/**
- * Helper function to get the maximum number of days in a given month and year.
- * @param {number} month
- * @param {number} year
- * @returns {number}
- */
-const getMaxDays = (month, year) => {
+function getMaxDays(month, year) {
   if (month === 2) return isLeapYear(year) ? 29 : 28;
   if ([4, 6, 9, 11].includes(month)) return 30;
   return 31;
-};
+}
 
-/**
- * Helper function to get the maximum allowable date (today + 99 years + 364 days).
- * @returns {Date}
- */
-const getMaxAllowableDate = () => {
+// Returns today’s date parts if no valid date string is provided.
+function getDateParts(dateString) {
+  if (!dateString) {
     const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setFullYear(today.getFullYear() + 99);
-    maxDate.setDate(maxDate.getDate() + 364);
-    return maxDate;
+    return {
+      year: String(today.getFullYear()),
+      month: String(today.getMonth() + 1).padStart(2, '0'),
+      day: String(today.getDate()).padStart(2, '0'),
+    };
+  }
+  const pureDate = dateString.slice(0, 10); // "YYYY-MM-DD"
+  const parts = pureDate.split('-');
+  if (parts.length === 3) {
+    return {
+      year: parts[0],
+      month: parts[1],
+      day: parts[2],
+    };
+  }
+  const today = new Date();
+  return {
+    year: String(today.getFullYear()),
+    month: String(today.getMonth() + 1).padStart(2, '0'),
+    day: String(today.getDate()).padStart(2, '0'),
   };
+}
 
-  const maxAllowableDate = getMaxAllowableDate();
-
-const isDateValid = (year, month, day) => {
+function isDateValid(year, month, day) {
   if (!year || !month || !day) return false;
-
   const numericYear = parseInt(year, 10);
   const numericMonth = parseInt(month, 10);
   const numericDay = parseInt(day, 10);
 
   if (numericMonth < 1 || numericMonth > 12) return false;
-
   const maxDays = getMaxDays(numericMonth, numericYear);
   if (numericDay < 1 || numericDay > maxDays) return false;
 
   const enteredDate = new Date(numericYear, numericMonth - 1, numericDay);
-  return enteredDate <= maxAllowableDate;
-};
+  const today = new Date();
+  const tomorrow = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + 1
+  );
+  return enteredDate >= tomorrow;
+}
 
-export default function PanelDateInput({ month, day, year, onDateChange }) {
-  const [internalMonth, setInternalMonth] = useState('');
-  const [internalDay, setInternalDay] = useState('');
-  const [internalYear, setInternalYear] = useState('');
-  const [initialMonth, setInitialMonth] = useState('');
-  const [initialDay, setInitialDay] = useState('');
-  const [initialYear, setInitialYear] = useState('');
+export default function PanelDateInput({ eventDate, onDateChange }) {
+  const [localYear, setLocalYear] = useState('');
+  const [localMonth, setLocalMonth] = useState('');
+  const [localDay, setLocalDay] = useState('');
 
-  const maxAllowableDate = getMaxAllowableDate();
-
-  // Initialize the state with the provided month, day, and year props
+  // Initialize local date parts from eventDate.
   useEffect(() => {
-    setInternalMonth(month);
-    setInitialMonth(month);
-    setInternalDay(day);
-    setInitialDay(day);
-    setInternalYear(year);
-    setInitialYear(year);
-  }, [month, day, year]);
+    const { year, month, day } = getDateParts(eventDate);
+    setLocalYear(year);
+    setLocalMonth(month);
+    setLocalDay(day);
+  }, [eventDate]);
 
-  const isDateValid = (year, month, day) => {
-    if (!year || !month || !day) return false;
-
-    const numericYear = parseInt(year, 10);
-    const numericMonth = parseInt(month, 10);
-    const numericDay = parseInt(day, 10);
-
-    if (numericMonth < 1 || numericMonth > 12) return false;
-
-    const maxDays = getMaxDays(numericMonth, numericYear);
-    if (numericDay < 1 || numericDay > maxDays) return false;
-
-    const enteredDate = new Date(numericYear, numericMonth - 1, numericDay);
-    return enteredDate <= maxAllowableDate;
-  };
-
-  const handleMonthChange = (text) => {
+  const handleChange = (text, setter, maxLength) => {
     const sanitized = text.replace(/[^0-9]/g, '');
-    if (sanitized.length > 2) return;
-    setInternalMonth(sanitized);
-  };
-
-  const handleDayChange = (text) => {
-    const sanitized = text.replace(/[^0-9]/g, '');
-    if (sanitized.length > 2) return;
-    setInternalDay(sanitized);
-  };
-
-  const handleYearChange = (text) => {
-    const sanitized = text.replace(/[^0-9]/g, '');
-    if (sanitized.length > 4) return;
-    setInternalYear(sanitized);
+    if (sanitized.length <= maxLength) {
+      setter(sanitized);
+    }
   };
 
   const handleBlur = (field) => {
-    const numericYear = parseInt(internalYear || '0', 10);
-    const numericMonth = parseInt(internalMonth || '0', 10);
-    const numericDay = parseInt(internalDay || '0', 10);
+    const defaultParts = getDateParts(eventDate);
+    let newYear = localYear;
+    let newMonth = localMonth;
+    let newDay = localDay;
 
     if (field === 'month') {
+      const numericMonth = parseInt(localMonth, 10);
       if (numericMonth < 1 || numericMonth > 12) {
-        setInternalMonth(initialMonth);
+        newMonth = defaultParts.month;
       } else {
-        const paddedMonth = String(numericMonth).padStart(2, '0');
-        setInternalMonth(paddedMonth);
-        onDateChange(paddedMonth, internalDay, internalYear);
+        newMonth = String(numericMonth).padStart(2, '0');
       }
     }
 
     if (field === 'day') {
-      const maxDays = getMaxDays(numericMonth, numericYear || new Date().getFullYear());
+      const numericMonth = parseInt(localMonth, 10) || parseInt(defaultParts.month, 10);
+      const numericYear = parseInt(localYear, 10) || parseInt(defaultParts.year, 10);
+      const numericDay = parseInt(localDay, 10);
+      const maxDays = getMaxDays(numericMonth, numericYear);
       if (numericDay < 1 || numericDay > maxDays) {
-        setInternalDay(initialDay);
+        newDay = defaultParts.day;
       } else {
-        const paddedDay = String(numericDay).padStart(2, '0');
-        setInternalDay(paddedDay);
-        onDateChange(internalMonth, paddedDay, internalYear);
+        newDay = String(numericDay).padStart(2, '0');
       }
     }
 
     if (field === 'year') {
-      if (!isDateValid(numericYear, internalMonth, internalDay)) {
-        setInternalYear(initialYear);
-      } else {
-        onDateChange(internalMonth, internalDay, internalYear);
+      // If the complete date is not valid, reset to the default.
+      if (!isDateValid(localYear, localMonth, localDay)) {
+        newYear = defaultParts.year;
+        newMonth = defaultParts.month;
+        newDay = defaultParts.day;
       }
     }
 
-    if (!isDateValid(internalYear, internalMonth, internalDay)) {
-      setInternalMonth(initialMonth);
-      setInternalDay(initialDay);
-      setInternalYear(initialYear);
+    // Validate the full date; if invalid, fallback to the original eventDate.
+    if (isDateValid(newYear, newMonth, newDay)) {
+      setLocalYear(newYear);
+      setLocalMonth(newMonth);
+      setLocalDay(newDay);
+      onDateChange(`${newYear}-${newMonth}-${newDay}`);
+    } else {
+      setLocalYear(defaultParts.year);
+      setLocalMonth(defaultParts.month);
+      setLocalDay(defaultParts.day);
+      onDateChange(`${defaultParts.year}-${defaultParts.month}-${defaultParts.day}`);
     }
-  };
-
-  const handleFocus = (field) => {
-    if (field === 'month') setInternalMonth('');
-    if (field === 'day') setInternalDay('');
-    if (field === 'year') setInternalYear('');
   };
 
   return (
@@ -160,10 +136,9 @@ export default function PanelDateInput({ month, day, year, onDateChange }) {
       <View style={styles.dateInputs}>
         <TextInput
           style={styles.dateInput}
-          value={internalMonth}
-          onChangeText={handleMonthChange}
+          value={localMonth}
+          onChangeText={(text) => handleChange(text, setLocalMonth, 2)}
           onBlur={() => handleBlur('month')}
-          onFocus={() => handleFocus('month')}
           placeholder="MM"
           keyboardType="numeric"
           maxLength={2}
@@ -171,10 +146,9 @@ export default function PanelDateInput({ month, day, year, onDateChange }) {
         <Text style={styles.slash}>/</Text>
         <TextInput
           style={styles.dateInput}
-          value={internalDay}
-          onChangeText={handleDayChange}
+          value={localDay}
+          onChangeText={(text) => handleChange(text, setLocalDay, 2)}
           onBlur={() => handleBlur('day')}
-          onFocus={() => handleFocus('day')}
           placeholder="DD"
           keyboardType="numeric"
           maxLength={2}
@@ -182,10 +156,9 @@ export default function PanelDateInput({ month, day, year, onDateChange }) {
         <Text style={styles.slash}>/</Text>
         <TextInput
           style={styles.dateInput}
-          value={internalYear}
-          onChangeText={handleYearChange}
+          value={localYear}
+          onChangeText={(text) => handleChange(text, setLocalYear, 4)}
           onBlur={() => handleBlur('year')}
-          onFocus={() => handleFocus('year')}
           placeholder="YYYY"
           keyboardType="numeric"
           maxLength={4}
@@ -196,9 +169,8 @@ export default function PanelDateInput({ month, day, year, onDateChange }) {
 }
 
 PanelDateInput.propTypes = {
-  month: PropTypes.string.isRequired,
-  day: PropTypes.string.isRequired,
-  year: PropTypes.string.isRequired,
+  eventDate: PropTypes.string.isRequired,
+  // onDateChange receives a string in the "YYYY-MM-DD" format.
   onDateChange: PropTypes.func.isRequired,
 };
 
@@ -210,7 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     fontSize: 16,
-    color: '#FFFFFF'
+    color: '#FFFFFF',
   },
   dateInputs: {
     flexDirection: 'row',

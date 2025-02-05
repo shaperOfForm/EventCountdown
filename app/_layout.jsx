@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   sliderOverlay: {
     position: 'absolute',
-    top: '50%',
+    top: '6.25%',
     left: 0,
     right: 0,
     alignItems: 'center', // Center horizontally
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   sliderWrapper: {
     width: '80%',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent background for visibility
+    backgroundColor: 'transparent',
     borderRadius: 5,
     padding: 10,
   },

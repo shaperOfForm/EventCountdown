@@ -5,14 +5,22 @@ import PropTypes from 'prop-types';
 import { useThemedColor } from '../useThemedColor';
 
 export default function TimeRemaining({ timeRemaining = {} }) {
+  const labelColor = useThemedColor('#FFFFFF');
+  const valueColor = useThemedColor('#ff9e9e');
+
   if (typeof timeRemaining === 'string') {
     return (
       <View style={styles.container}>
-        <Text style={[styles.label, { color: useThemedColor('#FFFFFF') }]}>Time Remaining:</Text>
-        <Text style={[styles.value, { color: useThemedColor('#ff9e9e') }]}>{timeRemaining}</Text>
+        <Text style={[styles.label, { color: labelColor }]}>
+          Time Remaining:
+        </Text>
+        <Text style={[styles.value, { color: valueColor }]}>
+          {timeRemaining}
+        </Text>
       </View>
     );
   }
+
   const {
     years = 0,
     months = 0,
@@ -28,6 +36,7 @@ export default function TimeRemaining({ timeRemaining = {} }) {
   if (weeks > 0) parts.push(`${weeks}w`);
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
+
   const countdownString = parts.length > 0 ? parts.join(',') : '<1h';
 
   let displayTotalDays = `${totalDays} total days`;
@@ -37,12 +46,11 @@ export default function TimeRemaining({ timeRemaining = {} }) {
     displayTotalDays = `<1 total day`;
   }
 
-  const labelColor = useThemedColor('#FFFFFF');
-  const valueColor = useThemedColor('#ff9e9e');
-
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: labelColor }]}>Time Remaining:</Text>
+      <Text style={[styles.label, { color: labelColor }]}>
+        Time Remaining:
+      </Text>
       <Text style={[styles.value, { color: valueColor }]}>
         {countdownString} - ({displayTotalDays})
       </Text>

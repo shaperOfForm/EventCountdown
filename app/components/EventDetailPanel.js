@@ -1,5 +1,5 @@
 // components/EventDetailPanel.js
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Animated,
@@ -7,7 +7,6 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
   Text,
-  Alert,
 } from 'react-native';
 import PropTypes from 'prop-types';
 import Header from './Header';
@@ -16,13 +15,15 @@ import PanelDateInput from './PanelDateInput';
 import DaysOffInput from './DaysOffInput';
 import DaysActiveCheckboxes from './DaysActiveCheckboxes';
 import HomepageCheckbox from './HomepageCheckbox';
-import { parseLocalDateOnly, buildDateString, computeAdjustedTime } from '../utils/dateUtils';
+import {
+  parseLocalDateOnly,
+  computeAdjustedTime,
+} from '../utils/dateUtils';
 import { useThemedColor } from '../useThemedColor';
 
 export default function EventDetailPanel({
   slideAnimation,
   selectedEvent,
-  selectedCountdown,
   closePanel,
   updateEventDate,
   updateDaysOff,
@@ -30,14 +31,25 @@ export default function EventDetailPanel({
   toggleHomepage,
   currentTime,
 }) {
-  // Local states remain unchanged...
+  // Local states for date parts, days off, and day selections.
   const [localMonth, setLocalMonth] = useState('');
   const [localDay, setLocalDay] = useState('');
   const [localYear, setLocalYear] = useState('');
   const [localDaysOff, setLocalDaysOff] = useState(0);
-  const [localDaySelections, setLocalDaySelections] = useState([true, true, true, true, true, false, false]);
+  const [localDaySelections, setLocalDaySelections] = useState([
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+  ]);
+  // Local state for the computed countdown.
+  const [countdown, setCountdown] = useState(null);
   const isFirstRun = useRef(true);
 
+  // Initialize local state when selectedEvent changes.
   useEffect(() => {
     if (!selectedEvent) return;
     const dateObj = parseLocalDateOnly(selectedEvent.eventDate);
@@ -47,25 +59,44 @@ export default function EventDetailPanel({
       setLocalYear(String(dateObj.getFullYear()));
     }
     setLocalDaysOff(selectedEvent.daysOff || 0);
-    if (Array.isArray(selectedEvent.daySelections) && selectedEvent.daySelections.length === 7) {
+    if (
+      Array.isArray(selectedEvent.daySelections) &&
+      selectedEvent.daySelections.length === 7
+    ) {
       setLocalDaySelections(selectedEvent.daySelections);
     } else {
       setLocalDaySelections([true, true, true, true, true, false, false]);
     }
   }, [selectedEvent]);
 
-  // (Additional effects omitted for brevity)
+  // Recalculate the countdown whenever the event date, days off, day selections, or current time changes.
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const newCountdown = computeAdjustedTime(
+      selectedEvent.eventDate,
+      selectedEvent.daysOff || 0,
+      selectedEvent.daySelections || [true, true, true, true, true, false, false],
+      currentTime
+    );
+    setCountdown(newCountdown);
+  }, [selectedEvent, currentTime]);
 
   const themedContainerBg = useThemedColor('rgba(62, 16, 109, 0.95)');
-  const themedHeaderText = useThemedColor('#FFFFFF');
   const themedLoadingText = useThemedColor('#EEEEEE');
 
   if (!selectedEvent) {
     return (
-      <Animated.View style={[styles.container, { transform: [{ translateX: slideAnimation }] }]}>
+      <Animated.View
+        style={[
+          styles.container,
+          { transform: [{ translateX: slideAnimation }] },
+        ]}
+      >
         <Header title="Event Details" onClose={closePanel} />
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: themedLoadingText }]}>Loading event details...</Text>
+          <Text style={[styles.loadingText, { color: themedLoadingText }]}>
+            Loading event details...
+          </Text>
         </View>
       </Animated.View>
     );
@@ -75,22 +106,26 @@ export default function EventDetailPanel({
     <TouchableWithoutFeedback onPress={closePanel}>
       <View style={styles.overlay}>
         <TouchableWithoutFeedback>
-          <Animated.View style={[styles.container, { backgroundColor: themedContainerBg, transform: [{ translateX: slideAnimation }] }]}>
+          <Animated.View
+            style={[
+              styles.container,
+              { backgroundColor: themedContainerBg, transform: [{ translateX: slideAnimation }] },
+            ]}
+          >
             <ScrollView>
               <Header title={selectedEvent.name} onClose={closePanel} />
-              {selectedCountdown ? (
-                <TimeRemaining timeRemaining={selectedCountdown} />
+              {countdown ? (
+                <TimeRemaining timeRemaining={countdown} />
               ) : (
-                <Text style={[styles.loadingText, { color: themedLoadingText }]}>Calculating time remaining...</Text>
+                <Text style={[styles.loadingText, { color: themedLoadingText }]}>
+                  Calculating time remaining...
+                </Text>
               )}
               <PanelDateInput
-                month={localMonth}
-                day={localDay}
-                year={localYear}
-                onDateChange={(m, d, y) => {
-                  setLocalMonth(m);
-                  setLocalDay(d);
-                  setLocalYear(y);
+                eventDate={selectedEvent.eventDate}
+                onDateChange={(newIsoDate) => {
+                  // Update the event date externally
+                  updateEventDate(selectedEvent.id, newIsoDate);
                 }}
               />
               <DaysOffInput
@@ -110,15 +145,17 @@ export default function EventDetailPanel({
               <DaysActiveCheckboxes
                 daySelections={localDaySelections}
                 onDaySelectionChange={(index, isSelected) => {
-                  const copy = [...localDaySelections];
-                  copy[index] = isSelected;
-                  setLocalDaySelections(copy);
+                  const newSelections = [...localDaySelections];
+                  newSelections[index] = isSelected;
+                  setLocalDaySelections(newSelections);
                   updateDaySelection(selectedEvent.id, index, isSelected);
                 }}
               />
               <HomepageCheckbox
                 isHomepageChecked={selectedEvent.isHomepageChecked}
-                onToggleHomepage={() => toggleHomepage(selectedEvent.id, selectedCountdown)}
+                onToggleHomepage={() =>
+                  toggleHomepage(selectedEvent.id, countdown)
+                }
               />
             </ScrollView>
           </Animated.View>
@@ -137,14 +174,6 @@ EventDetailPanel.propTypes = {
     daysOff: PropTypes.number,
     daySelections: PropTypes.arrayOf(PropTypes.bool),
     isHomepageChecked: PropTypes.bool,
-  }),
-  selectedCountdown: PropTypes.shape({
-    years: PropTypes.number,
-    months: PropTypes.number,
-    weeks: PropTypes.number,
-    days: PropTypes.number,
-    hours: PropTypes.number,
-    totalDays: PropTypes.number,
   }),
   closePanel: PropTypes.func.isRequired,
   updateEventDate: PropTypes.func.isRequired,

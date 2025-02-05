@@ -1,13 +1,14 @@
 // components/FullScreenCountdown.js
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { computeAdjustedTime } from './utils/dateUtils';
 import { parseISO, isValid, isFuture } from 'date-fns';
 import TimeRemaining from './components/TimeRemaining';
-import { markRedirected } from './utils/redirectFlag'; // ADDED
+import { markRedirected } from './utils/redirectFlag';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useThemedColor } from './useThemedColor';
+import tinycolor from 'tinycolor2';
 
 export default function FullScreenCountdown() {
   const router = useRouter();
@@ -16,27 +17,22 @@ export default function FullScreenCountdown() {
   // Pull out params
   const { eventName, eventDate, daysOff, daySelections, countdown } = params;
 
-  // Safely convert daySelections into boolean array (7 entries)
+  // Convert daySelections into a boolean array (7 entries)
   const activeDaySelections =
     Array.isArray(daySelections) && daySelections.length === 7
       ? daySelections.map((val) => val === 'true' || val === true)
       : [true, true, true, true, true, false, false];
 
-  // We'll track the "current time" locally and update it every minute
+  // Track current time locally; update it every minute
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Basic validation of event date and initial checks
+  // Basic validation of event details
   useEffect(() => {
     if (!eventName || !eventDate) {
       Alert.alert(
         'Invalid Event',
         'Event details are missing or incomplete. Redirecting to the main menu.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ],
+        [{ text: 'OK', onPress: () => router.replace('/') }],
         { cancelable: false }
       );
       return;
@@ -46,12 +42,7 @@ export default function FullScreenCountdown() {
       Alert.alert(
         'Invalid Date Format',
         'The event date format is incorrect. Redirecting to the main menu.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ],
+        [{ text: 'OK', onPress: () => router.replace('/') }],
         { cancelable: false }
       );
       return;
@@ -61,13 +52,8 @@ export default function FullScreenCountdown() {
     if (!isValid(eventDateObj)) {
       Alert.alert(
         'Invalid Date',
-        'The event date format is invalid. Redirecting to the main menu.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ],
+        'The event date is invalid. Redirecting to the main menu.',
+        [{ text: 'OK', onPress: () => router.replace('/') }],
         { cancelable: false }
       );
       return;
@@ -77,12 +63,7 @@ export default function FullScreenCountdown() {
       Alert.alert(
         'Event Passed',
         'The event date has already passed. Redirecting to the main menu.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ],
+        [{ text: 'OK', onPress: () => router.replace('/') }],
         { cancelable: false }
       );
     }
@@ -96,7 +77,7 @@ export default function FullScreenCountdown() {
     return () => clearInterval(timer);
   }, []);
 
-  // If a precomputed countdown was passed, parse it
+  // Parse precomputed countdown if passed
   let parsedCountdown;
   if (countdown) {
     try {
@@ -106,8 +87,7 @@ export default function FullScreenCountdown() {
     }
   }
 
-  // If we have a stored countdown, let's use that.
-  // Otherwise, compute dynamically as before.
+  // Compute final countdown
   let finalCountdown;
   if (parsedCountdown) {
     finalCountdown = parsedCountdown;
@@ -120,7 +100,7 @@ export default function FullScreenCountdown() {
     );
   }
 
-  // If countdown is fully zero, we can redirect out
+  // If countdown is fully zero, redirect out
   useEffect(() => {
     if (
       finalCountdown.years === 0 &&
@@ -132,39 +112,50 @@ export default function FullScreenCountdown() {
       Alert.alert(
         'Event Reached',
         'The event date has been reached. Redirecting to the main menu.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ],
+        [{ text: 'OK', onPress: () => router.replace('/') }],
         { cancelable: false }
       );
     }
   }, [finalCountdown, router]);
 
-  // Mark we've redirected so Home won't auto-redirect again,
-  // then go back to main
   function handleBackToMain() {
     markRedirected();
     router.replace('/');
   }
 
+  // Get themed colors for the gradient and texts.
+  const themedGradientColor1 = useThemedColor('#4B1382'); // Base gradient color 1
+  const themedGradientColor2 = useThemedColor('#3E106D'); // Base gradient color 2
+  const titleColor = useThemedColor('#FFFFFF'); // Title text color
+  const dateColor = useThemedColor('#FFFFFF');  // Date text color
+
+  // For the content container, we want a solid overlay that shows the gradient behind it.
+  // We use a base color (same as the gradient start) and apply the hue shift.
+  // Then we apply an alpha value for transparency.
+  const baseContainerColor = '#4B1382';
+  const themedContainerColorRaw = useThemedColor(baseContainerColor);
+  const themedContainerColor = tinycolor(themedContainerColorRaw)
+    .setAlpha(0.8)
+    .toRgbString();
+  
+  // Compute a themed button color (you can choose your base button color).
+  const themedButtonColor = useThemedColor('#2277FF');
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={['#4B1382', '#3E106D']}
-        style={styles.container}
+        colors={[themedGradientColor1, themedGradientColor2]}
+        style={styles.gradientContainer}
       >
-        <View style={styles.container}>
-          <Text style={styles.title}>{eventName || 'Unnamed Event'}</Text>
-          <Text style={styles.date}>{eventDate || 'Invalid Date'}</Text>
+        {/* Use the original container width/style (as before) */}
+        <View style={[styles.contentContainer, { backgroundColor: themedContainerColor }]}>
+          <Text style={[styles.title, { color: titleColor }]}>{eventName || 'Unnamed Event'}</Text>
+          <Text style={[styles.date, { color: dateColor }]}>{eventDate || 'Invalid Date'}</Text>
 
-          {/* Display finalCountdown using TimeRemaining */}
           <TimeRemaining timeRemaining={finalCountdown} />
 
-          <View style={{ height: 100 }} >
-            <Button title="Back to Main Menu" onPress={handleBackToMain} />
+          <View style={styles.buttonContainer}>
+            <Button title="Back to Main Menu" onPress={handleBackToMain} color={themedButtonColor} />
           </View>
         </View>
       </LinearGradient>
@@ -173,25 +164,34 @@ export default function FullScreenCountdown() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
     flex: 1,
-    backgroundColor: '#4B1382',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     paddingBottom: 0,
   },
+  contentContainer: {
+    flex: 1,
+    // Remove or do not override width so it remains as originally styled.
+    // In the original code, the container style was used for both the gradient and the inner view.
+    // We'll assume the original style did not force a specific width.
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   title: {
     fontSize: 32,
-    color: '#FFFFFF',
     fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
   },
   date: {
     fontSize: 24,
-    color: '#FFFFFF',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  buttonContainer: {
+    height: 100,
   },
 });
