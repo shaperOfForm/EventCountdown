@@ -1,5 +1,4 @@
 // HomeScreen.js
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -23,50 +22,57 @@ import {
 import EventDetailPanel from './components/EventDetailPanel';
 import AddEventForm from './components/AddEventForm';
 import EventList from './components/EventList';
+import { useTheme } from './ThemeContext';
 
 export default function HomeScreen() {
+  const theme = useTheme();
   const router = useRouter();
+
+  // Set up default date values using tomorrow’s date.
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const defaultMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const defaultDay = String(tomorrow.getDate()).padStart(2, '0');
+  const defaultYear = String(tomorrow.getFullYear());
 
-  // --------------------
-  // State: date form inputs
-  // --------------------
-  const [month, setMonth] = useState(String(tomorrow.getMonth() + 1).padStart(2, '0'));
-  const [day, setDay] = useState(String(tomorrow.getDate()).padStart(2, '0'));
-  const [year, setYear] = useState(String(tomorrow.getFullYear()));
+  // -------------------------
+  // State: Date Input Fields
+  // -------------------------
+  const [month, setMonth] = useState(defaultMonth);
+  const [day, setDay] = useState(defaultDay);
+  const [year, setYear] = useState(defaultYear);
   const [eventName, setEventName] = useState('');
 
-  // --------------------
-  // State: events list
-  // --------------------
+  // -------------------------
+  // State: Events & Detail Panel
+  // -------------------------
   const [events, setEvents] = useState([]);
-
-  // --------------------
-  // State: detail panel
-  // --------------------
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [selectedEventCountdown, setSelectedEventCountdown] = useState(null);
   const [slideAnimation] = useState(new Animated.Value(300));
 
-  // --------------------
-  // State: "currentTime" updates once per hour
-  // --------------------
+  // -------------------------
+  // State: Current Time (updates hourly)
+  // -------------------------
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // -------------- HELPER to compute a fresh countdown --------------
-  const getCountdownForEvent = useCallback((ev) => {
-    if (!ev) return null;
-    const daySelections = Array.isArray(ev.daySelections) && ev.daySelections.length === 7
-      ? ev.daySelections
-      : [true, true, true, true, true, false, false];
+  // -------------------------
+  // Helper: Compute Countdown for an Event
+  // -------------------------
+  const getCountdownForEvent = useCallback(
+    (ev) => {
+      if (!ev) return null;
+      const daySelections = Array.isArray(ev.daySelections) && ev.daySelections.length === 7
+        ? ev.daySelections
+        : [true, true, true, true, true, false, false];
+      return computeAdjustedTime(ev.eventDate, ev.daysOff || 0, daySelections, currentTime);
+    },
+    [currentTime]
+  );
 
-    return computeAdjustedTime(ev.eventDate, ev.daysOff || 0, daySelections, currentTime);
-  }, [currentTime]);
-
-  // --------------------
-  // Load events from AsyncStorage
-  // --------------------
+  // -------------------------
+  // Effect: Load Events from AsyncStorage
+  // -------------------------
   useEffect(() => {
     const loadEvents = async () => {
       try {
@@ -74,9 +80,9 @@ export default function HomeScreen() {
         if (stored) {
           const parsedEvents = JSON.parse(stored);
           setEvents(parsedEvents);
-          console.log('Loaded events from AsyncStorage:', parsedEvents);
+          console.log('Loaded events:', parsedEvents);
         } else {
-          console.log('No events found in AsyncStorage.');
+          console.log('No events stored.');
         }
       } catch (err) {
         console.error('Error loading events:', err);
@@ -86,15 +92,13 @@ export default function HomeScreen() {
     loadEvents();
   }, []);
 
-  // --------------------------------------------------------------
-  // Update "currentTime" once per hour, on the hour
-  // --------------------------------------------------------------
+  // -------------------------
+  // Effect: Update currentTime on the hour
+  // -------------------------
   useEffect(() => {
     let hourTimer;
-
     const scheduleNextHour = () => {
       const now = new Date();
-      // Next hour => same day/month, hour+1, minute=0, second=0
       const nextHour = new Date(
         now.getFullYear(),
         now.getMonth(),
@@ -105,21 +109,18 @@ export default function HomeScreen() {
         0
       );
       const msUntilNextHour = nextHour - now;
-
       hourTimer = setTimeout(() => {
         setCurrentTime(new Date());
-        scheduleNextHour(); // schedule the following hour again
+        scheduleNextHour();
       }, msUntilNextHour);
     };
-
     scheduleNextHour();
-
     return () => clearTimeout(hourTimer);
   }, []);
 
-  // --------------------
-  // AUTO-REDIRECT to homepage event
-  // --------------------
+  // -------------------------
+  // Effect: Auto-Redirect to Homepage Event (if set)
+  // -------------------------
   useEffect(() => {
     const redirectToHomepage = async () => {
       try {
@@ -127,12 +128,9 @@ export default function HomeScreen() {
         if (homepageEventId && !hasAlreadyRedirected()) {
           const homepageEvent = events.find((event) => event.id === homepageEventId);
           if (homepageEvent) {
-            console.log('Redirecting to FullScreenCountdown for Homepage Event:', homepageEvent);
+            console.log('Redirecting to FullScreenCountdown for event:', homepageEvent);
             markRedirected();
-
-            // Recompute countdown for that event
             const freshCountdown = getCountdownForEvent(homepageEvent);
-
             router.replace({
               pathname: '/FullScreenCountdown',
               params: {
@@ -146,24 +144,23 @@ export default function HomeScreen() {
               },
             });
           } else {
-            console.warn('Homepage Event ID not found. Removing homepageEventId.');
+            console.warn('Homepage event not found. Clearing homepageEventId.');
             await AsyncStorage.removeItem('homepageEventId');
             resetRedirected();
           }
         }
       } catch (err) {
-        console.error('Error during homepage redirection:', err);
+        console.error('Error during auto-redirect:', err);
       }
     };
-
     if (events.length > 0) {
       redirectToHomepage();
     }
   }, [events, router, getCountdownForEvent]);
 
-  // --------------------------------------------------------------
-  // UPDATE FUNCTIONS (stable callbacks, functional setEvents)
-  // --------------------------------------------------------------
+  // -------------------------
+  // Update Functions: Event Date, Days Off, & Day Selections
+  // -------------------------
   const updateEventDate = useCallback(async (eventId, newDateStr) => {
     try {
       setEvents((prevEvents) => {
@@ -171,12 +168,12 @@ export default function HomeScreen() {
           event.id === eventId ? { ...event, eventDate: newDateStr } : event
         );
         AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-        console.log('Event date updated successfully.');
+        console.log('Updated event date.');
         return updated;
       });
     } catch (err) {
       console.error('Error updating event date:', err);
-      Alert.alert('Error', 'There was a problem updating the event date.');
+      Alert.alert('Error', 'Could not update the event date.');
     }
   }, []);
 
@@ -187,12 +184,12 @@ export default function HomeScreen() {
           event.id === eventId ? { ...event, daysOff: newDaysOff } : event
         );
         AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-        console.log('Days off updated successfully.');
+        console.log('Updated days off.');
         return updated;
       });
     } catch (err) {
       console.error('Error updating days off:', err);
-      Alert.alert('Error', 'There was a problem updating the days off.');
+      Alert.alert('Error', 'Could not update the days off.');
     }
   }, []);
 
@@ -201,25 +198,25 @@ export default function HomeScreen() {
       setEvents((prevEvents) => {
         const updated = prevEvents.map((event) => {
           if (event.id === eventId) {
-            const newDaySelections = [...(event.daySelections || [true, true, true, true, true, false, false])];
-            newDaySelections[dayIndex] = isSelected;
-            return { ...event, daySelections: newDaySelections };
+            const newSelections = [...(event.daySelections || [true, true, true, true, true, false, false])];
+            newSelections[dayIndex] = isSelected;
+            return { ...event, daySelections: newSelections };
           }
           return event;
         });
         AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-        console.log('Day selection updated successfully.');
+        console.log('Updated day selection.');
         return updated;
       });
     } catch (err) {
       console.error('Error updating day selection:', err);
-      Alert.alert('Error', 'There was a problem updating the day selection.');
+      Alert.alert('Error', 'Could not update the day selection.');
     }
   }, []);
 
-  // ------------------
-  // HOMEPAGE TOGGLE
-  // ------------------
+  // -------------------------
+  // Toggle Homepage: Mark/Unmark an Event as Homepage
+  // -------------------------
   const toggleHomepage = useCallback(async (eventId, countdown = null) => {
     try {
       setEvents((prevEvents) => {
@@ -227,26 +224,17 @@ export default function HomeScreen() {
           if (event.id === eventId) {
             return { ...event, isHomepageChecked: !event.isHomepageChecked };
           }
-          // ensure only one homepage is checked by unchecking others
           return { ...event, isHomepageChecked: false };
         });
-
         AsyncStorage.setItem('allEvents', JSON.stringify(updated)).catch(console.error);
-
         const toggledEvent = updated.find((e) => e.id === eventId);
         const isNowHomepage = toggledEvent?.isHomepageChecked;
-
         if (isNowHomepage) {
           (async () => {
             await AsyncStorage.setItem('homepageEventId', eventId);
-            console.log('Homepage set for Event ID:', eventId);
+            console.log('Set homepage for event:', eventId);
             markRedirected();
-
-            let finalCountdown = countdown;
-            if (!finalCountdown) {
-              finalCountdown = getCountdownForEvent(toggledEvent);
-            }
-
+            let finalCountdown = countdown || getCountdownForEvent(toggledEvent);
             router.replace({
               pathname: '/FullScreenCountdown',
               params: {
@@ -264,21 +252,20 @@ export default function HomeScreen() {
           (async () => {
             await AsyncStorage.removeItem('homepageEventId');
             resetRedirected();
-            console.log('Homepage unset for Event ID:', eventId);
+            console.log('Unset homepage for event:', eventId);
           })();
         }
-
         return updated;
       });
     } catch (err) {
       console.error('Error toggling homepage:', err);
-      Alert.alert('Error', 'There was a problem toggling the homepage checkbox.');
+      Alert.alert('Error', 'Could not toggle the homepage setting.');
     }
   }, [getCountdownForEvent, router]);
 
-  // --------------------------------------------------------------
-  // ADD / DELETE
-  // --------------------------------------------------------------
+  // -------------------------
+  // Add & Delete Event Functions
+  // -------------------------
   const getNextEventNumber = () => {
     const usedNumbers = new Set();
     events.forEach((event) => {
@@ -293,12 +280,10 @@ export default function HomeScreen() {
   };
 
   const addEvent = async () => {
-    // Validate date input
     if (!month || !day || !year) {
-      Alert.alert('Incomplete Fields', 'Please complete all date fields before adding an event.');
+      Alert.alert('Incomplete Fields', 'Please fill in all date fields.');
       return;
     }
-
     let eventDateStr;
     try {
       eventDateStr = buildDateString(parseInt(month, 10), parseInt(day, 10), parseInt(year, 10));
@@ -306,13 +291,11 @@ export default function HomeScreen() {
       Alert.alert('Invalid Date', 'Please enter a valid date.');
       return;
     }
-
     const eventDate = parseISO(eventDateStr);
     if (!isValid(eventDate) || !isAfter(eventDate, new Date())) {
       Alert.alert('Invalid Date', 'Please enter a valid future date.');
       return;
     }
-
     const defaultTitle = `Event #${getNextEventNumber()}`;
     const newEvent = {
       id: uuidv4(),
@@ -322,21 +305,17 @@ export default function HomeScreen() {
       daySelections: [true, true, true, true, true, false, false],
       isHomepageChecked: false,
     };
-
     try {
       setEvents((prevEvents) => {
         const updated = [...prevEvents, newEvent];
         AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-        console.log('Event added successfully:', newEvent);
+        console.log('Added event:', newEvent);
         return updated;
       });
-
-      // Reset form fields
       setEventName('');
-      setMonth(String(tomorrow.getMonth() + 1).padStart(2, '0'));
-      setDay(String(tomorrow.getDate()).padStart(2, '0'));
-      setYear(String(tomorrow.getFullYear()));
-
+      setMonth(defaultMonth);
+      setDay(defaultDay);
+      setYear(defaultYear);
       Alert.alert('Success', 'Event added successfully.');
     } catch (err) {
       console.error('Error adding event:', err);
@@ -349,16 +328,14 @@ export default function HomeScreen() {
       setEvents((prevEvents) => {
         const updated = prevEvents.filter((event) => event.id !== eventId);
         AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-        console.log('Event deleted successfully:', eventId);
+        console.log('Deleted event:', eventId);
         return updated;
       });
-
-      // If the deleted event was set as homepage, remove it
       const homepageEventId = await AsyncStorage.getItem('homepageEventId');
       if (homepageEventId === eventId) {
         await AsyncStorage.removeItem('homepageEventId');
         resetRedirected();
-        console.log('Homepage was deleted. Redirect flag reset.');
+        console.log('Deleted homepage event; reset redirect flag.');
       }
     } catch (err) {
       console.error('Error deleting event:', err);
@@ -366,14 +343,13 @@ export default function HomeScreen() {
     }
   };
 
-  // --------------------------------------------------------------
-  // DETAIL PANEL: open/close
-  // --------------------------------------------------------------
+  // -------------------------
+  // Detail Panel Animation
+  // -------------------------
   const toggleSlidePanel = (event, countdown) => {
-    console.log('Opening EventDetailPanel for Event:', event);
+    console.log('Opening detail panel for event:', event);
     setSelectedEventId(event.id);
     setSelectedEventCountdown(countdown);
-
     Animated.timing(slideAnimation, {
       toValue: 0,
       duration: 300,
@@ -392,28 +368,23 @@ export default function HomeScreen() {
     });
   }, [slideAnimation]);
 
-  // --------------------------------------------------------------
-  // REORDER HANDLING
-  // --------------------------------------------------------------
+  // -------------------------
+  // Handle Reordering of Events
+  // -------------------------
   const handleDragEnd = ({ data }) => {
-    console.log('Events reordered. New order:', data);
+    console.log('Reordered events:', data);
     setEvents(data);
     AsyncStorage.setItem('allEvents', JSON.stringify(data)).catch((err) => {
-      console.error('Error saving reordered events:', err);
+      console.error('Error saving new order:', err);
     });
   };
 
-  // --------------------------------------------------------------
-  // RENDER
-  // --------------------------------------------------------------
   return (
-    <LinearGradient
-      colors={['#792DE7', '#4B1382']}
-      style={styles.gradientBackground}
-    >
-      <View style={styles.container}>
-        {/* Add Event Form */}
+    <LinearGradient colors={theme.gradientColors} style={styles.gradientBackground}>
+      <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
+        {/* Pass the theme prop to child components so they can style text, pickers, buttons, etc. */}
         <AddEventForm
+          theme={theme}
           month={month}
           setMonth={setMonth}
           day={day}
@@ -424,19 +395,17 @@ export default function HomeScreen() {
           setEventName={setEventName}
           onAddEvent={addEvent}
         />
-
-        {/* Event List */}
         <EventList
+          theme={theme}
           events={events}
           toggleSlidePanel={toggleSlidePanel}
           deleteEvent={deleteEvent}
           handleDragEnd={handleDragEnd}
-          currentTime={currentTime} // optional usage in EventItem
+          currentTime={currentTime}
         />
-
-        {/* Detail Panel */}
         {selectedEventId && (
           <EventDetailPanel
+            theme={theme}
             slideAnimation={slideAnimation}
             selectedEvent={events.find((e) => e.id === selectedEventId)}
             closePanel={closeSlidePanel}
