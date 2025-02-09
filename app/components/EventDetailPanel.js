@@ -31,7 +31,7 @@ export default function EventDetailPanel({
   toggleHomepage,
   currentTime,
 }) {
-  // Local states for date parts, days off, and day selections.
+  // Local states for date parts, days off, and day selections
   const [localMonth, setLocalMonth] = useState('');
   const [localDay, setLocalDay] = useState('');
   const [localYear, setLocalYear] = useState('');
@@ -45,11 +45,14 @@ export default function EventDetailPanel({
     false,
     false,
   ]);
-  // Local state for the computed countdown.
+
+  // Local state for the computed countdown
   const [countdown, setCountdown] = useState(null);
+
+  // Used to avoid certain effects on the first render
   const isFirstRun = useRef(true);
 
-  // Initialize local state when selectedEvent changes.
+  // Initialize local state when selectedEvent changes
   useEffect(() => {
     if (!selectedEvent) return;
     const dateObj = parseLocalDateOnly(selectedEvent.eventDate);
@@ -59,6 +62,7 @@ export default function EventDetailPanel({
       setLocalYear(String(dateObj.getFullYear()));
     }
     setLocalDaysOff(selectedEvent.daysOff || 0);
+
     if (
       Array.isArray(selectedEvent.daySelections) &&
       selectedEvent.daySelections.length === 7
@@ -69,7 +73,7 @@ export default function EventDetailPanel({
     }
   }, [selectedEvent]);
 
-  // Recalculate the countdown whenever the event date, days off, day selections, or current time changes.
+  // Recalculate the countdown whenever event date, daysOff, daySelections, or currentTime changes
   useEffect(() => {
     if (!selectedEvent) return;
     const newCountdown = computeAdjustedTime(
@@ -81,8 +85,15 @@ export default function EventDetailPanel({
     setCountdown(newCountdown);
   }, [selectedEvent, currentTime]);
 
+  // Themed colors
   const themedContainerBg = useThemedColor('rgba(62, 16, 109, 0.95)');
   const themedLoadingText = useThemedColor('#EEEEEE');
+
+  // Safely handle countdown; if it's null or a string, default to 0 for maxDaysOff
+  const maxDaysOff =
+    countdown && typeof countdown === 'object'
+      ? countdown.totalDaysIgnoringDaysOff
+      : 0;
 
   if (!selectedEvent) {
     return (
@@ -105,11 +116,15 @@ export default function EventDetailPanel({
   return (
     <TouchableWithoutFeedback onPress={closePanel}>
       <View style={styles.overlay}>
+        {/* Prevent closing when tapping inside the panel */}
         <TouchableWithoutFeedback>
           <Animated.View
             style={[
               styles.container,
-              { backgroundColor: themedContainerBg, transform: [{ translateX: slideAnimation }] },
+              {
+                backgroundColor: themedContainerBg,
+                transform: [{ translateX: slideAnimation }],
+              },
             ]}
           >
             <ScrollView>
@@ -130,8 +145,7 @@ export default function EventDetailPanel({
               />
               <DaysOffInput
                 initialDaysOff={String(localDaysOff)}
-                // Pass the countdown’s totalDays if countdown is not a string
-                maxDaysOff={countdown.totalDaysIgnoringDaysOff || 0}
+                maxDaysOff={maxDaysOff} // Use the safe maxDaysOff
                 onSubmitDaysOff={(val) => {
                   setLocalDaysOff(val);
                   updateDaysOff(selectedEvent.id, parseInt(val, 10) || 0);
@@ -154,9 +168,7 @@ export default function EventDetailPanel({
               />
               <HomepageCheckbox
                 isHomepageChecked={selectedEvent.isHomepageChecked}
-                onToggleHomepage={() =>
-                  toggleHomepage(selectedEvent.id, countdown)
-                }
+                onToggleHomepage={() => toggleHomepage(selectedEvent.id, countdown)}
               />
             </ScrollView>
           </Animated.View>
