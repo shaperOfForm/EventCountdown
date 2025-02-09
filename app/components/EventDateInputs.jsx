@@ -1,4 +1,3 @@
-// components/EventDateInputs.js
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
@@ -26,7 +25,7 @@ const DAYS_IN_MONTH = {
   7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31,
 };
 
-export default function EventDateInputs({ month, day, year, onDateChange }) {
+function EventDateInputs({ month, day, year, onDateChange }) {
   const maxAllowableDate = getMaxAllowableDate();
   const currentYear = new Date().getFullYear();
   const maxYear = maxAllowableDate.getFullYear();
@@ -89,7 +88,6 @@ export default function EventDateInputs({ month, day, year, onDateChange }) {
     dayOptions.push(String(d).padStart(2, '0'));
   }
 
-  // Use themed colors for the pickers.
   const inputBg = useThemedColor('#BFC7FF');
   const textColor = useThemedColor('#000000');
 
@@ -157,3 +155,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
+export default React.memo(EventDateInputs);

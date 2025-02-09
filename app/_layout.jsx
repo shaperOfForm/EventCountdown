@@ -1,75 +1,88 @@
-// app/layout.jsx
 import React, { useContext } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// HueOffsetContext from your own HueOffsetContext.js
 import { HueOffsetProvider, HueOffsetContext } from './HueOffsetContext';
 
-function HueOffsetSlider() {
+const guidelineBaseWidth = 350;
+
+// Custom hook for responsive scaling
+const useScale = () => {
+  const { width } = useWindowDimensions();
+  return (size) => (width / guidelineBaseWidth) * size;
+};
+
+const HueOffsetSlider = () => {
   const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
+  const scale = useScale();
 
   return (
     <View style={styles.sliderOverlay}>
-      <View style={styles.sliderWrapper}>
-        {/* 1) The narrow gradient bar behind the slider's track */}
-        <View style={styles.gradientTrack}>
+      <View style={[styles.sliderWrapper, { padding: scale(10) }]}>
+        <View
+          style={[
+            styles.gradientTrack,
+            {
+              left: scale(20),
+              right: scale(20),
+              height: scale(4),
+              borderRadius: scale(3),
+              transform: [{ translateY: scale(7.5) }],
+            },
+          ]}
+        >
           <LinearGradient
             colors={[
-              'hsl(270, 100%, 50%)',    // Red
-              'hsl(330, 100%, 50%)',   // Yellow
-              'hsl(30, 100%, 50%)',  // Green
-              'hsl(90, 100%, 50%)',  // Cyan
-              'hsl(150, 100%, 50%)',  // Blue
-              'hsl(210, 100%, 50%)',  // Magenta
-              'hsl(269, 100%, 50%)',  // Almost Red
+              'hsl(270, 100%, 50%)',
+              'hsl(330, 100%, 50%)',
+              'hsl(30, 100%, 50%)',
+              'hsl(90, 100%, 50%)',
+              'hsl(150, 100%, 50%)',
+              'hsl(210, 100%, 50%)',
+              'hsl(269, 100%, 50%)',
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={StyleSheet.absoluteFill}
           />
         </View>
-
-        {/* 2) The slider, using a transparent track so the gradient is visible */}
         <Slider
-          style={styles.slider}
+          style={[styles.slider, { height: scale(40) }]}
           minimumValue={0}
-          maximumValue={355}
+          maximumValue={360} // Updated to cover the full hue range
           step={1}
           value={hueOffset}
           onValueChange={setHueOffset}
           minimumTrackTintColor="transparent"
           maximumTrackTintColor="transparent"
-          thumbTintColor="#fff"  // White slider thumb
+          thumbTintColor="#fff"
+          accessibilityLabel="Hue Offset Slider"
+          accessible
         />
       </View>
     </View>
   );
-}
+};
 
 export default function Layout() {
+  const scale = useScale();
+
   return (
     <HueOffsetProvider>
       <View style={styles.container}>
-        {/* Header with design image */}
-        <View style={styles.headerContainer}>
+        <View style={[styles.headerContainer, { height: scale(80) }]}>
           <Image
             source={require('../assets/images/design.png')}
             style={styles.headerImage}
             resizeMode="cover"
-            accessibilityLabel="decorative"
-            accessible={true}
+            accessibilityLabel="Decorative header image"
+            accessible
           />
         </View>
-
-        {/* Routed content (e.g. screens) */}
         <View style={styles.contentContainer}>
           <Stack screenOptions={{ headerShown: false }} />
         </View>
-
-        {/* Slider overlay at the top */}
         <HueOffsetSlider />
       </View>
     </HueOffsetProvider>
@@ -82,7 +95,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   headerContainer: {
-    height: 80,
     width: '100%',
   },
   headerImage: {
@@ -94,7 +106,7 @@ const styles = StyleSheet.create({
   },
   sliderOverlay: {
     position: 'absolute',
-    top: '6.25%',
+    top: '7.225%',
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -102,24 +114,16 @@ const styles = StyleSheet.create({
   },
   sliderWrapper: {
     width: '80%',
-    padding: 10,
     position: 'relative',
   },
-  // A slim bar with a gradient behind the slider's track
   gradientTrack: {
     position: 'absolute',
     top: '50%',
-    left: 20,
-    right: 20,
-    height: 4,           // Track thickness
-    borderRadius: 3,     // Round edges
-    transform: [{ translateY: 7.5 }],  // Vertically center
     overflow: 'hidden',
     zIndex: 0,
   },
   slider: {
     width: '100%',
-    height: 40,
     zIndex: 1,
   },
 });

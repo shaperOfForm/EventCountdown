@@ -1,4 +1,3 @@
-// components/EventItem.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
@@ -14,7 +13,7 @@ function formatDateMMDDYYYY(isoDateStr) {
   return `${mm}-${dd}-${yyyy}`;
 }
 
-export default function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) {
+function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) {
   const white = useThemedColor('#FFFFFF');
   const lightGray = useThemedColor('#DDD');
   const countdownColor = useThemedColor('#ff9e9e');
@@ -73,21 +72,21 @@ export default function EventItem({ event, toggleSlidePanel, deleteEvent, drag, 
           <Text style={[styles.buttonText, { color: buttonTextColor }]}>⚙</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.deleteButton]}
+          style={styles.deleteButton}
           onPress={() => {
             Alert.alert(
               'Delete event?',
               'Are you sure you want to delete this event?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                    {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => deleteEvent(event.id),
-                  },
-                ]
-              );
-            }}
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => deleteEvent(event.id),
+                },
+              ]
+            );
+          }}
         >
           <Text style={styles.deleteButtonText}>X</Text>
         </TouchableOpacity>
@@ -161,3 +160,5 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
 });
+
+export default React.memo(EventItem);

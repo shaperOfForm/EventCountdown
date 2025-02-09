@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import CheckBox from 'expo-checkbox';
 
-export default function HomepageCheckbox({ isHomepageChecked, onToggleHomepage }) {
+function HomepageCheckbox({ isHomepageChecked, onToggleHomepage }) {
   return (
     <View style={styles.container}>
       <CheckBox
@@ -29,8 +29,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   checkbox: {
-    // Increase the size of the checkbox for better touch targets
     width: 24,
     height: 24,
   },
 });
+
+export default React.memo(HomepageCheckbox);

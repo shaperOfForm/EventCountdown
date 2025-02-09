@@ -1,4 +1,3 @@
-// components/PanelDateInput.js
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, Text } from 'react-native';
 import PropTypes from 'prop-types';
@@ -13,7 +12,6 @@ function getMaxDays(month, year) {
   return 31;
 }
 
-// Returns today’s date parts if no valid date string is provided.
 function getDateParts(dateString) {
   if (!dateString) {
     const today = new Date();
@@ -23,7 +21,7 @@ function getDateParts(dateString) {
       day: String(today.getDate()).padStart(2, '0'),
     };
   }
-  const pureDate = dateString.slice(0, 10); // "YYYY-MM-DD"
+  const pureDate = dateString.slice(0, 10);
   const parts = pureDate.split('-');
   if (parts.length === 3) {
     return {
@@ -60,12 +58,11 @@ function isDateValid(year, month, day) {
   return enteredDate >= tomorrow;
 }
 
-export default function PanelDateInput({ eventDate, onDateChange }) {
+function PanelDateInput({ eventDate, onDateChange }) {
   const [localYear, setLocalYear] = useState('');
   const [localMonth, setLocalMonth] = useState('');
   const [localDay, setLocalDay] = useState('');
 
-  // Initialize local date parts from eventDate.
   useEffect(() => {
     const { year, month, day } = getDateParts(eventDate);
     setLocalYear(year);
@@ -108,7 +105,6 @@ export default function PanelDateInput({ eventDate, onDateChange }) {
     }
 
     if (field === 'year') {
-      // If the complete date is not valid, reset to the default.
       if (!isDateValid(localYear, localMonth, localDay)) {
         newYear = defaultParts.year;
         newMonth = defaultParts.month;
@@ -116,7 +112,6 @@ export default function PanelDateInput({ eventDate, onDateChange }) {
       }
     }
 
-    // Validate the full date; if invalid, fallback to the original eventDate.
     if (isDateValid(newYear, newMonth, newDay)) {
       setLocalYear(newYear);
       setLocalMonth(newMonth);
@@ -170,7 +165,6 @@ export default function PanelDateInput({ eventDate, onDateChange }) {
 
 PanelDateInput.propTypes = {
   eventDate: PropTypes.string.isRequired,
-  // onDateChange receives a string in the "YYYY-MM-DD" format.
   onDateChange: PropTypes.func.isRequired,
 };
 
@@ -206,3 +200,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 });
+
+export default React.memo(PanelDateInput);

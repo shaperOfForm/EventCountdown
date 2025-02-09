@@ -3,56 +3,83 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
-import DaysActiveCheckboxes from './DaysActiveCheckboxes';
 
 export default function DaysOffInput({
-  // Set default values directly in the function parameters
-  initialDaysOff = 0, // Default to 0 if not provided
+  initialDaysOff = 0,
   maxDaysOff,
-  onSubmitDaysOff = null, // Default to null if not provided
+  onSubmitDaysOff = null,
   initialDaySelections = [true, true, true, true, true, false, false],
   onDaySelectionsChange = null,
 }) {
-  // ---------------------------
-  // Local state: text for daysOff
-  // ---------------------------
+  // Store the input as a string for the TextInput
   const [localDaysOff, setLocalDaysOff] = useState(String(initialDaysOff));
-
-  // ---------------------------
-  // Local state: day-of-week checkboxes
-  // ---------------------------
+  // Keep track of the last valid value so we can revert if necessary
+  const [previousValidDaysOff, setPreviousValidDaysOff] = useState(String(initialDaysOff));
+  // Store the day-of-week checkbox selections (even if not rendered here)
   const [daySelections, setDaySelections] = useState(initialDaySelections);
 
-  // If parent changes `initialDaysOff` externally, sync local
+  // When the parent updates initialDaysOff, update local state and previous value.
   useEffect(() => {
-    setLocalDaysOff(String(initialDaysOff));
+    const initialValue = String(initialDaysOff);
+    setLocalDaysOff(initialValue);
+    setPreviousValidDaysOff(initialValue);
   }, [initialDaysOff]);
 
-  // If parent changes `initialDaySelections`, sync local
+  // Sync the day selections if they change externally.
   useEffect(() => {
     setDaySelections(initialDaySelections);
   }, [initialDaySelections]);
 
-  // ---------------------------
-  // When user toggles a day
-  // ---------------------------
+  // Handle text changes with the following logic:
+  // 1. If the current value is "0" and the new input is longer than one digit,
+  //    remove the leading zero(s).
+  // 2. If the new numeric value exceeds maxDaysOff, revert to the previous valid value.
+  // 3. Otherwise, update the input and store the new value as valid.
+  const handleTextChange = (text) => {
+    // Remove leading zeros if the field is exactly "0" and more digits are added
+    if (localDaysOff === '0' && text.length > 1) {
+      text = text.replace(/^0+/, '');
+    }
+
+    // Allow empty text (the user might be deleting)
+    if (text === '') {
+      setLocalDaysOff(text);
+      return;
+    }
+
+    // Convert text to a number (if possible)
+    const numericValue = parseInt(text, 10);
+
+    if (!isNaN(numericValue)) {
+      if (numericValue > maxDaysOff) {
+        // If the new number exceeds the maximum allowed, revert to the previous valid value
+        setLocalDaysOff(previousValidDaysOff);
+        return;
+      } else {
+        // Valid input—update both the local state and the previous valid value
+        setLocalDaysOff(text);
+        setPreviousValidDaysOff(text);
+      }
+    } else {
+      // In case text is not a valid number, just update the state (this branch is precautionary)
+      setLocalDaysOff(text);
+    }
+  };
+
+  // When the input loses focus, call the parent's submission callback if provided.
+  const handleBlur = () => {
+    if (onSubmitDaysOff) {
+      onSubmitDaysOff(localDaysOff);
+    }
+  };
+
+  // (If needed, handle checkbox changes with this function.)
   const handleDaySelectionChange = (index, isSelected) => {
     const updatedSelections = [...daySelections];
     updatedSelections[index] = isSelected;
     setDaySelections(updatedSelections);
-
-    // Notify parent immediately, or you could also do this on blur if desired
     if (onDaySelectionsChange) {
       onDaySelectionsChange(updatedSelections);
-    }
-  };
-
-  // ---------------------------
-  // Submit daysOff ONLY on blur
-  // ---------------------------
-  const handleBlur = () => {
-    if (onSubmitDaysOff) {
-      onSubmitDaysOff(localDaysOff);
     }
   };
 
@@ -62,12 +89,12 @@ export default function DaysOffInput({
       <TextInput
         style={styles.input}
         value={localDaysOff}
-        onChangeText={setLocalDaysOff} // updates local state only
-        onBlur={handleBlur} // fires callback when user clicks away
+        onChangeText={handleTextChange}
+        onBlur={handleBlur}
         keyboardType="numeric"
-        maxLength={3}
+        maxLength={5} // Allow up to 5 digits
         placeholder={`0 - ${maxDaysOff}`}
-        placeholderTextColor={'#888'}
+        placeholderTextColor="#888"
       />
       <Text style={styles.helperText}>Max Days Off: {maxDaysOff}</Text>
     </View>
@@ -75,19 +102,12 @@ export default function DaysOffInput({
 }
 
 DaysOffInput.propTypes = {
-  // Accept either a string or number for the initialDaysOff
-  initialDaysOff: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]),
+  initialDaysOff: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   maxDaysOff: PropTypes.number.isRequired,
-  // Called once user blurs from the TextInput
   onSubmitDaysOff: PropTypes.func,
   initialDaySelections: PropTypes.arrayOf(PropTypes.bool),
   onDaySelectionsChange: PropTypes.func,
 };
-
-// Removed defaultProps as defaults are now handled in function parameters
 
 const styles = StyleSheet.create({
   container: {

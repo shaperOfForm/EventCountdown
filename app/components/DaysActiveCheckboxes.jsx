@@ -1,4 +1,3 @@
-// components/DaysActiveCheckboxes.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import CheckBox from 'expo-checkbox';
@@ -6,7 +5,7 @@ import { useThemedColor } from '../useThemedColor';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function DaysActiveCheckboxes({ daySelections, onDaySelectionChange }) {
+function DaysActiveCheckboxes({ daySelections, onDaySelectionChange }) {
   const labelColor = useThemedColor('#FFFFFF');
   return (
     <View>
@@ -49,3 +48,5 @@ const styles = StyleSheet.create({
     height: 24,
   },
 });
+
+export default React.memo(DaysActiveCheckboxes);

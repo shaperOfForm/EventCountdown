@@ -1,4 +1,3 @@
-// components/EventDetailPanel.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -15,10 +14,7 @@ import PanelDateInput from './PanelDateInput';
 import DaysOffInput from './DaysOffInput';
 import DaysActiveCheckboxes from './DaysActiveCheckboxes';
 import HomepageCheckbox from './HomepageCheckbox';
-import {
-  parseLocalDateOnly,
-  computeAdjustedTime,
-} from '../utils/dateUtils';
+import { parseLocalDateOnly, computeAdjustedTime } from '../utils/dateUtils';
 import { useThemedColor } from '../useThemedColor';
 
 export default function EventDetailPanel({
@@ -31,28 +27,14 @@ export default function EventDetailPanel({
   toggleHomepage,
   currentTime,
 }) {
-  // Local states for date parts, days off, and day selections
   const [localMonth, setLocalMonth] = useState('');
   const [localDay, setLocalDay] = useState('');
   const [localYear, setLocalYear] = useState('');
   const [localDaysOff, setLocalDaysOff] = useState(0);
-  const [localDaySelections, setLocalDaySelections] = useState([
-    true,
-    true,
-    true,
-    true,
-    true,
-    false,
-    false,
-  ]);
-
-  // Local state for the computed countdown
+  const [localDaySelections, setLocalDaySelections] = useState([true, true, true, true, true, false, false]);
   const [countdown, setCountdown] = useState(null);
-
-  // Used to avoid certain effects on the first render
   const isFirstRun = useRef(true);
 
-  // Initialize local state when selectedEvent changes
   useEffect(() => {
     if (!selectedEvent) return;
     const dateObj = parseLocalDateOnly(selectedEvent.eventDate);
@@ -62,18 +44,13 @@ export default function EventDetailPanel({
       setLocalYear(String(dateObj.getFullYear()));
     }
     setLocalDaysOff(selectedEvent.daysOff || 0);
-
-    if (
-      Array.isArray(selectedEvent.daySelections) &&
-      selectedEvent.daySelections.length === 7
-    ) {
+    if (Array.isArray(selectedEvent.daySelections) && selectedEvent.daySelections.length === 7) {
       setLocalDaySelections(selectedEvent.daySelections);
     } else {
       setLocalDaySelections([true, true, true, true, true, false, false]);
     }
   }, [selectedEvent]);
 
-  // Recalculate the countdown whenever event date, daysOff, daySelections, or currentTime changes
   useEffect(() => {
     if (!selectedEvent) return;
     const newCountdown = computeAdjustedTime(
@@ -85,11 +62,8 @@ export default function EventDetailPanel({
     setCountdown(newCountdown);
   }, [selectedEvent, currentTime]);
 
-  // Themed colors
   const themedContainerBg = useThemedColor('rgba(62, 16, 109, 0.95)');
   const themedLoadingText = useThemedColor('#EEEEEE');
-
-  // Safely handle countdown; if it's null or a string, default to 0 for maxDaysOff
   const maxDaysOff =
     countdown && typeof countdown === 'object'
       ? countdown.totalDaysIgnoringDaysOff
@@ -97,12 +71,7 @@ export default function EventDetailPanel({
 
   if (!selectedEvent) {
     return (
-      <Animated.View
-        style={[
-          styles.container,
-          { transform: [{ translateX: slideAnimation }] },
-        ]}
-      >
+      <Animated.View style={[styles.container, { transform: [{ translateX: slideAnimation }] }]}>
         <Header title="Event Details" onClose={closePanel} />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: themedLoadingText }]}>
@@ -116,7 +85,6 @@ export default function EventDetailPanel({
   return (
     <TouchableWithoutFeedback onPress={closePanel}>
       <View style={styles.overlay}>
-        {/* Prevent closing when tapping inside the panel */}
         <TouchableWithoutFeedback>
           <Animated.View
             style={[
@@ -126,11 +94,17 @@ export default function EventDetailPanel({
                 transform: [{ translateX: slideAnimation }],
               },
             ]}
+            accessible={true}
+            accessibilityLabel={`Event details for ${selectedEvent.name}, scheduled for ${selectedEvent.eventDate}`}
           >
             <ScrollView>
               <Header title={selectedEvent.name} onClose={closePanel} />
               {countdown ? (
-                <TimeRemaining timeRemaining={countdown} />
+                // Left-justify the countdown container by providing containerStyle
+                <TimeRemaining
+                  timeRemaining={countdown}
+                  containerStyle={{ alignItems: 'flex-start' }}
+                />
               ) : (
                 <Text style={[styles.loadingText, { color: themedLoadingText }]}>
                   Calculating time remaining...
@@ -139,13 +113,12 @@ export default function EventDetailPanel({
               <PanelDateInput
                 eventDate={selectedEvent.eventDate}
                 onDateChange={(newIsoDate) => {
-                  // Update the event date externally
                   updateEventDate(selectedEvent.id, newIsoDate);
                 }}
               />
               <DaysOffInput
                 initialDaysOff={String(localDaysOff)}
-                maxDaysOff={maxDaysOff} // Use the safe maxDaysOff
+                maxDaysOff={maxDaysOff}
                 onSubmitDaysOff={(val) => {
                   setLocalDaysOff(val);
                   updateDaysOff(selectedEvent.id, parseInt(val, 10) || 0);

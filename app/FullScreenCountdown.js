@@ -1,6 +1,5 @@
-// components/FullScreenCountdown.js
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, StyleSheet, Alert, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { computeAdjustedTime } from './utils/dateUtils';
 import { parseISO, isValid, isFuture } from 'date-fns';
@@ -9,24 +8,41 @@ import { markRedirected } from './utils/redirectFlag';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemedColor } from './useThemedColor';
 import tinycolor from 'tinycolor2';
+import * as Notifications from 'expo-notifications';
+
+// --- Responsive scaling helper ---
+const { width } = Dimensions.get('window');
+const guidelineBaseWidth = 350;
+const scale = size => (width / guidelineBaseWidth) * size;
 
 export default function FullScreenCountdown() {
   const router = useRouter();
   const params = useLocalSearchParams();
-
-  // Pull out params
   const { eventName, eventDate, daysOff, daySelections, countdown } = params;
 
   // Convert daySelections into a boolean array (7 entries)
   const activeDaySelections =
     Array.isArray(daySelections) && daySelections.length === 7
-      ? daySelections.map((val) => val === 'true' || val === true)
+      ? daySelections.map(val => val === 'true' || val === true)
       : [true, true, true, true, true, false, false];
 
   // Track current time locally; update it every minute
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Basic validation of event details
+  // Request notification permissions when the component mounts
+  useEffect(() => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Notifications Disabled',
+          'Please enable notifications in your settings to receive event alerts.'
+        );
+      }
+    })();
+  }, []);
+
+  // Validate event details and redirect if needed
   useEffect(() => {
     if (!eventName || !eventDate) {
       Alert.alert(
@@ -37,7 +53,6 @@ export default function FullScreenCountdown() {
       );
       return;
     }
-
     if (typeof eventDate !== 'string') {
       Alert.alert(
         'Invalid Date Format',
@@ -47,7 +62,6 @@ export default function FullScreenCountdown() {
       );
       return;
     }
-
     const eventDateObj = parseISO(eventDate);
     if (!isValid(eventDateObj)) {
       Alert.alert(
@@ -58,7 +72,6 @@ export default function FullScreenCountdown() {
       );
       return;
     }
-
     if (!isFuture(eventDateObj)) {
       Alert.alert(
         'Event Passed',
@@ -69,11 +82,26 @@ export default function FullScreenCountdown() {
     }
   }, [eventName, eventDate, router]);
 
-  // Update currentTime every minute so we can recalc the countdown
+  // Schedule a notification for the event time (works even in the background)
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60 * 1000);
+    const eventDateObj = parseISO(eventDate);
+    if (isValid(eventDateObj) && isFuture(eventDateObj)) {
+      // Calculate seconds until the event fires
+      const secondsUntilEvent = Math.ceil((eventDateObj.getTime() - Date.now()) / 1000);
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Event Reached',
+          body: `The event "${eventName}" has been reached.`,
+          sound: 'default',
+        },
+        trigger: { seconds: secondsUntilEvent },
+      });
+    }
+  }, [eventName, eventDate]);
+
+  // Update current time every minute so we can recalc the countdown
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60 * 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -100,7 +128,7 @@ export default function FullScreenCountdown() {
     );
   }
 
-  // If countdown is fully zero, redirect out
+  // If countdown reaches zero, alert the user and redirect to main menu
   useEffect(() => {
     if (
       finalCountdown.years === 0 &&
@@ -130,32 +158,63 @@ export default function FullScreenCountdown() {
   const dateColor = useThemedColor('#FFFFFF');  // Date text color
 
   // For the content container, we want a solid overlay that shows the gradient behind it.
-  // We use a base color (same as the gradient start) and apply the hue shift.
-  // Then we apply an alpha value for transparency.
   const baseContainerColor = '#4B1382';
   const themedContainerColorRaw = useThemedColor(baseContainerColor);
   const themedContainerColor = tinycolor(themedContainerColorRaw)
     .setAlpha(0.8)
     .toRgbString();
   
-  // Compute a themed button color (you can choose your base button color).
+  // Compute a themed button color.
   const themedButtonColor = useThemedColor('#2277FF');
+
+  // Format the event date to MM-DD-YYYY
+  let formattedEventDate = eventDate;
+  try {
+    const dateObj = parseISO(eventDate);
+    if (isValid(dateObj)) {
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      const yyyy = dateObj.getFullYear();
+      formattedEventDate = `${mm}-${dd}-${yyyy}`;
+    }
+  } catch (error) {
+    console.error('Error formatting eventDate', error);
+  }
 
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
         colors={[themedGradientColor1, themedGradientColor2]}
         style={styles.gradientContainer}
+        accessible={true}
+        accessibilityLabel={`Event countdown for ${eventName}`}
       >
-        {/* Use the original container width/style (as before) */}
-        <View style={[styles.contentContainer, { backgroundColor: themedContainerColor }]}>
-          <Text style={[styles.title, { color: titleColor }]}>{eventName || 'Unnamed Event'}</Text>
-          <Text style={[styles.date, { color: dateColor }]}>{eventDate || 'Invalid Date'}</Text>
-
-          <TimeRemaining timeRemaining={finalCountdown} />
-
+        <View
+          style={[styles.contentContainer, { backgroundColor: themedContainerColor }]}
+          accessible={true}
+          accessibilityLabel={`Event details: ${eventName}, scheduled for ${formattedEventDate}`}
+        >
+          <Text style={[styles.title, { color: titleColor }]} allowFontScaling>
+            {eventName || 'Unnamed Event'}
+          </Text>
+          <Text style={[styles.date, { color: dateColor }]} allowFontScaling>
+            {formattedEventDate || 'Invalid Date'}
+          </Text>
+          {/* Render the countdown with a larger font size and no label */}
+          <TimeRemaining
+            timeRemaining={finalCountdown}
+            hideLabel={true}
+            valueStyle={{ fontSize: scale(26) }}
+          />
           <View style={styles.buttonContainer}>
-            <Button title="Back to Main Menu" onPress={handleBackToMain} color={themedButtonColor} />
+            <Button
+              title="Back to Main Menu"
+              onPress={handleBackToMain}
+              color={themedButtonColor}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Main Menu"
+              accessibilityHint="Navigates back to the main menu"
+            />
           </View>
         </View>
       </LinearGradient>
@@ -166,32 +225,33 @@ export default function FullScreenCountdown() {
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(20),
     paddingBottom: 0,
   },
   contentContainer: {
     flex: 1,
-    // Remove or do not override width so it remains as originally styled.
-    // In the original code, the container style was used for both the gradient and the inner view.
-    // We'll assume the original style did not force a specific width.
+    maxWidth: '95%',
+    minWidth: '75%',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(20),
   },
   title: {
-    fontSize: 32,
+    fontSize: scale(32),
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: scale(10),
     textAlign: 'center',
   },
   date: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: scale(24),
+    marginBottom: scale(20),
     textAlign: 'center',
   },
   buttonContainer: {
-    height: 100,
+    height: scale(100),
+    justifyContent: 'center',
   },
 });

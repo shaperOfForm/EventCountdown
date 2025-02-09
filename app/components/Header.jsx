@@ -1,9 +1,8 @@
-// components/Header.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useThemedColor } from '../useThemedColor';
 
-export default function Header({ title, onClose }) {
+function Header({ title, onClose }) {
   const titleColor = useThemedColor('#FFFFFF');
   const closeColor = useThemedColor('#FF0000');
   return (
@@ -34,3 +33,5 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
 });
+
+export default React.memo(Header);

@@ -1,69 +1,91 @@
-// app/layout.jsx
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import Slider from '@react-native-community/slider';
-import { HueRotate } from 'react-native-color-matrix-image-filters';
+import { LinearGradient } from 'expo-linear-gradient';
+import { HueOffsetProvider, HueOffsetContext } from '../HueOffsetContext';
 
-export default function Layout() {
-  // The hue value is in radians (0 to 2π, with 2π ≈ 6.28319)
-  const [hue, setHue] = useState(0);
+export default function HueSlider() {
+  const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
 
   return (
-    <View style={styles.container}>
-      {/* Header Container with design image and overlayed HueSlider */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../../assets/images/design.png')}
-          style={styles.headerImage}
-          resizeMode="cover"
-        />
-        {/* HueSlider overlay */}
-        <View style={styles.hueSliderWrapper}>
-          <Slider
-            style={styles.hueSlider}
-            minimumValue={0}
-            maximumValue={6.28319} // Full rotation in radians (0 to 2π)
-            value={hue}
-            onValueChange={setHue}
-            minimumTrackTintColor="#fff"
-            maximumTrackTintColor="#000"
+    <View style={styles.sliderOverlay}>
+      <View style={styles.sliderWrapper}>
+        <View style={styles.gradientTrack}>
+          <LinearGradient
+            colors={[
+              'hsl(270, 100%, 50%)',
+              'hsl(330, 100%, 50%)',
+              'hsl(30, 100%, 50%)',
+              'hsl(90, 100%, 50%)',
+              'hsl(150, 100%, 50%)',
+              'hsl(210, 100%, 50%)',
+              'hsl(269, 100%, 50%)',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
           />
         </View>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={355}
+          step={1}
+          value={hueOffset}
+          onValueChange={setHueOffset}
+          minimumTrackTintColor="transparent"
+          maximumTrackTintColor="transparent"
+          thumbTintColor="#fff"
+        />
       </View>
-      {/* Wrap the Stack with a HueRotate filter to apply the hue shift */}
-      <HueRotate amount={hue}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </HueRotate>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1 
+    flex: 1,
+    position: 'relative',
   },
   headerContainer: {
     height: 80,
     width: '100%',
-    position: 'relative', // Needed for absolute positioning of the slider overlay
   },
   headerImage: {
     flex: 1,
     width: '100%',
   },
-  hueSliderWrapper: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent background for better slider visibility
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  contentContainer: {
+    flex: 1,
   },
-  hueSlider: {
+  sliderOverlay: {
+    position: 'absolute',
+    top: '6.25%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sliderWrapper: {
+    width: '80%',
+    padding: 10,
+    position: 'relative',
+  },
+  gradientTrack: {
+    position: 'absolute',
+    top: '50%',
+    left: 20,
+    right: 20,
+    height: 4,
+    borderRadius: 3,
+    transform: [{ translateY: 7.5 }],
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+  slider: {
     width: '100%',
     height: 40,
+    zIndex: 1,
   },
 });

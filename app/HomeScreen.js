@@ -1,4 +1,3 @@
-// HomeScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Alert, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,30 +15,25 @@ import { useThemedColor } from './useThemedColor';
 export default function HomeScreen() {
   const router = useRouter();
 
-  // Compute themed background colors for HomeScreen
   const themedGradientColors = [useThemedColor('#792DE7'), useThemedColor('#4B1382')];
   const themedContainerBg = useThemedColor('#792DE7');
 
-  // Set default date values using tomorrow’s date
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const defaultMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
   const defaultDay = String(tomorrow.getDate()).padStart(2, '0');
   const defaultYear = String(tomorrow.getFullYear());
 
-  // State: Date Input Fields
   const [month, setMonth] = useState(defaultMonth);
   const [day, setDay] = useState(defaultDay);
   const [year, setYear] = useState(defaultYear);
   const [eventName, setEventName] = useState('');
 
-  // State: Events & Detail Panel
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [selectedEventCountdown, setSelectedEventCountdown] = useState(null);
   const [slideAnimation] = useState(new Animated.Value(300));
 
-  // State: Current Time (updates hourly)
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const getCountdownForEvent = useCallback(
@@ -292,7 +286,7 @@ export default function HomeScreen() {
     Animated.timing(slideAnimation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
   };
 
@@ -300,7 +294,7 @@ export default function HomeScreen() {
     Animated.timing(slideAnimation, {
       toValue: 300,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start(() => {
       setSelectedEventId(null);
       setSelectedEventCountdown(null);
