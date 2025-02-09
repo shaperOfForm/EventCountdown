@@ -1,6 +1,6 @@
 // components/EventItem.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
 import { computeAdjustedTime } from '../utils/dateUtils';
 import { useThemedColor } from '../useThemedColor';
@@ -74,7 +74,20 @@ export default function EventItem({ event, toggleSlidePanel, deleteEvent, drag, 
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.deleteButton]}
-          onPress={() => deleteEvent(event.id)}
+          onPress={() => {
+            Alert.alert(
+              'Delete event?',
+              'Are you sure you want to delete this event?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                    {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => deleteEvent(event.id),
+                  },
+                ]
+              );
+            }}
         >
           <Text style={styles.deleteButtonText}>X</Text>
         </TouchableOpacity>

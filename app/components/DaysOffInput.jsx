@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     marginTop: 5,
-    color: '#555',
+    color: '#888888',
     fontSize: 12,
   },
 });

@@ -264,7 +264,6 @@ export default function HomeScreen() {
       setMonth(defaultMonth);
       setDay(defaultDay);
       setYear(defaultYear);
-      Alert.alert('Success', 'Event added successfully.');
     } catch (err) {
       Alert.alert('Error', 'There was a problem adding your event.');
     }

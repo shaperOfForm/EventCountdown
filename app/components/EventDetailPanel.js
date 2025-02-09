@@ -130,7 +130,8 @@ export default function EventDetailPanel({
               />
               <DaysOffInput
                 initialDaysOff={String(localDaysOff)}
-                maxDaysOff={selectedEvent.totalDays || 0}
+                // Pass the countdown’s totalDays if countdown is not a string
+                maxDaysOff={countdown.totalDaysIgnoringDaysOff || 0}
                 onSubmitDaysOff={(val) => {
                   setLocalDaysOff(val);
                   updateDaysOff(selectedEvent.id, parseInt(val, 10) || 0);

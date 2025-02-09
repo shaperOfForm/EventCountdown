@@ -52,7 +52,8 @@ export function parseLocalDateOnly(dateStr) {
  * @param {boolean[]} [daySelections=[true, true, true, true, true, false, false]]
  *   - An array for Monday (index 0) through Sunday (index 6). (JavaScript’s getDay() is shifted accordingly.)
  * @param {Date|string} [currentTimeVal=new Date()] - The current time.
- * @returns {object|string} - An object with years, months, weeks, days, hours, and totalDays or a complete message.
+ * @returns {object|string} - An object with years, months, weeks, days, hours, totalDays, 
+ *   and totalDaysIgnoringDaysOff, or a "Countdown Complete!" message if the event is in the past.
  */
 export function computeAdjustedTime(
   eventDateStr,
@@ -75,7 +76,7 @@ export function computeAdjustedTime(
   const totalDaysRaw = differenceInDays(eventDate, now);
   const remainingHours = differenceInHours(eventDate, now) % 24;
 
-  // Count inactive days based on the daySelections.
+  // Count inactive days based on daySelections.
   let inactiveDays = 0;
   let tempDate = new Date(now);
   for (let i = 0; i < totalDaysRaw; i++) {
@@ -87,8 +88,11 @@ export function computeAdjustedTime(
     }
   }
 
-  // Adjust active days.
-  let totalDays = totalDaysRaw - inactiveDays - daysOff;
+  // totalDaysIgnoringDaysOff excludes subtraction of daysOff
+  const totalDaysIgnoringDaysOff = totalDaysRaw - inactiveDays;
+
+  // totalDays includes daysOff
+  let totalDays = totalDaysIgnoringDaysOff - daysOff;
   if (totalDays < 0) totalDays = 0;
 
   if (totalDays === 0 && remainingHours === 0) {
@@ -109,6 +113,9 @@ export function computeAdjustedTime(
     weeks,
     days,
     hours: remainingHours,
+    // Actual countdown (subtracting daysOff).
     totalDays,
+    // The total ignoring 'daysOff', for use in UI (e.g., maxDaysOff).
+    totalDaysIgnoringDaysOff,
   };
 }
