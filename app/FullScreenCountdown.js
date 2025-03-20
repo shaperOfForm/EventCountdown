@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, Button, Alert, StyleSheet, Dimensions } from 'react-native';
+import Checkbox from 'expo-checkbox';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { computeAdjustedTime } from './utils/dateUtils';
 import { parseISO, isValid, isFuture } from 'date-fns';
@@ -28,6 +29,10 @@ export default function FullScreenCountdown() {
 
   // Track current time locally; update it every minute
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // State for daily notifications toggle and scheduled notification ID
+  const [dailyEnabled, setDailyEnabled] = useState(false);
+  const [dailyNotificationId, setDailyNotificationId] = useState(null);
 
   // Request notification permissions when the component mounts
   useEffect(() => {
@@ -82,11 +87,10 @@ export default function FullScreenCountdown() {
     }
   }, [eventName, eventDate, router]);
 
-  // Schedule a notification for the event time (works even in the background)
+  // Schedule a one-time notification for the event time (works even in the background)
   useEffect(() => {
     const eventDateObj = parseISO(eventDate);
     if (isValid(eventDateObj) && isFuture(eventDateObj)) {
-      // Calculate seconds until the event fires
       const secondsUntilEvent = Math.ceil((eventDateObj.getTime() - Date.now()) / 1000);
       Notifications.scheduleNotificationAsync({
         content: {
@@ -116,17 +120,14 @@ export default function FullScreenCountdown() {
   }
 
   // Compute final countdown
-  let finalCountdown;
-  if (parsedCountdown) {
-    finalCountdown = parsedCountdown;
-  } else {
-    finalCountdown = computeAdjustedTime(
-      eventDate,
-      parseInt(daysOff || '0', 10),
-      activeDaySelections,
-      currentTime
-    );
-  }
+  const finalCountdown = parsedCountdown
+    ? parsedCountdown
+    : computeAdjustedTime(
+        eventDate,
+        parseInt(daysOff || '0', 10),
+        activeDaySelections,
+        currentTime
+      );
 
   // If countdown reaches zero, alert the user and redirect to main menu
   useEffect(() => {
@@ -151,23 +152,72 @@ export default function FullScreenCountdown() {
     router.replace('/');
   }
 
-  // Get themed colors for the gradient and texts.
-  const themedGradientColor1 = useThemedColor('#4B1382'); // Base gradient color 1
-  const themedGradientColor2 = useThemedColor('#3E106D'); // Base gradient color 2
-  const titleColor = useThemedColor('#FFFFFF'); // Title text color
-  const dateColor = useThemedColor('#FFFFFF');  // Date text color
+  // Function to schedule a daily notification (fires at 9:00 AM daily)
+  const scheduleDailyNotification = async () => {
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Daily Reminder',
+          body: `Don't forget to check the countdown for "${eventName}".`,
+          sound: 'default',
+        },
+        trigger: { hour: 9, minute: 0, repeats: true },
+      });
+      setDailyNotificationId(id);
+    } catch (error) {
+      console.error('Error scheduling daily notification:', error);
+    }
+  };
 
-  // For the content container, we want a solid overlay that shows the gradient behind it.
+  // Function to cancel the daily notification
+  const cancelDailyNotification = async () => {
+    if (dailyNotificationId) {
+      try {
+        await Notifications.cancelScheduledNotificationAsync(dailyNotificationId);
+        setDailyNotificationId(null);
+      } catch (error) {
+        console.error('Error cancelling daily notification:', error);
+      }
+    }
+  };
+
+  // When the checkbox is toggled on, check/request permissions if necessary before scheduling daily notifications.
+  const handleToggleDaily = async (newValue) => {
+    if (newValue) {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        if (newStatus !== 'granted') {
+          Alert.alert(
+            'Notifications Required',
+            'Please enable notifications in your settings to receive daily reminders.'
+          );
+          setDailyEnabled(false);
+          return;
+        }
+      }
+      await scheduleDailyNotification();
+    } else {
+      await cancelDailyNotification();
+    }
+    setDailyEnabled(newValue);
+  };
+
+  // Themed colors for gradient and text
+  const themedGradientColor1 = useThemedColor('#4B1382');
+  const themedGradientColor2 = useThemedColor('#3E106D');
+  const titleColor = useThemedColor('#FFFFFF');
+  const dateColor = useThemedColor('#FFFFFF');
+  const themedButtonColor = useThemedColor('#2277FF');
+
+  // Create a semi-transparent container overlay color
   const baseContainerColor = '#4B1382';
   const themedContainerColorRaw = useThemedColor(baseContainerColor);
   const themedContainerColor = tinycolor(themedContainerColorRaw)
     .setAlpha(0.8)
     .toRgbString();
-  
-  // Compute a themed button color.
-  const themedButtonColor = useThemedColor('#2277FF');
 
-  // Format the event date to MM-DD-YYYY
+  // Format the event date as MM-DD-YYYY
   let formattedEventDate = eventDate;
   try {
     const dateObj = parseISO(eventDate);
@@ -186,12 +236,12 @@ export default function FullScreenCountdown() {
       <LinearGradient
         colors={[themedGradientColor1, themedGradientColor2]}
         style={styles.gradientContainer}
-        accessible={true}
+        accessible
         accessibilityLabel={`Event countdown for ${eventName}`}
       >
         <View
           style={[styles.contentContainer, { backgroundColor: themedContainerColor }]}
-          accessible={true}
+          accessible
           accessibilityLabel={`Event details: ${eventName}, scheduled for ${formattedEventDate}`}
         >
           <Text style={[styles.title, { color: titleColor }]} allowFontScaling>
@@ -200,12 +250,19 @@ export default function FullScreenCountdown() {
           <Text style={[styles.date, { color: dateColor }]} allowFontScaling>
             {formattedEventDate || 'Invalid Date'}
           </Text>
-          {/* Render the countdown with a larger font size and no label */}
           <TimeRemaining
             timeRemaining={finalCountdown}
-            hideLabel={true}
+            hideLabel
             valueStyle={{ fontSize: scale(26) }}
           />
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              value={dailyEnabled}
+              onValueChange={handleToggleDaily}
+              color={dailyEnabled ? "#4630EB" : undefined}
+            />
+            <Text style={styles.checkboxLabel}>Turn on daily notifications</Text>
+          </View>
           <View style={styles.buttonContainer}>
             <Button
               title="Back to Main Menu"
@@ -253,5 +310,15 @@ const styles = StyleSheet.create({
   buttonContainer: {
     height: scale(100),
     justifyContent: 'center',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: scale(10),
+  },
+  checkboxLabel: {
+    color: '#FFF',
+    fontSize: scale(16),
+    marginLeft: scale(8),
   },
 });

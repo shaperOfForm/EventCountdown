@@ -43,3 +43,5 @@ export const HueOffsetProvider = ({ children }) => {
     </HueOffsetContext.Provider>
   );
 };
+
+export default HueOffsetContext;

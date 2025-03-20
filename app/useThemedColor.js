@@ -6,3 +6,5 @@ export const useThemedColor = (baseColor) => {
   const { hueOffset } = useContext(HueOffsetContext);
   return useMemo(() => tinycolor(baseColor).spin(hueOffset).toHexString(), [baseColor, hueOffset]);
 };
+
+export default useThemedColor;

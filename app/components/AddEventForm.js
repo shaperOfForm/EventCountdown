@@ -39,8 +39,9 @@ export default function AddEventForm({
         placeholder="Event Name"
         value={eventName}
         onChangeText={setEventName}
-        style={[styles.input, { backgroundColor: inputBg, color: inputText }]}
-        placeholderTextColor={useThemedColor('#555')}
+        style={[styles.input, { backgroundColor: inputBg }]}
+        itemStyle={{ color: inputText }}
+        placeholderTextColor={useThemedColor('#999')}
       />
       <TouchableOpacity style={[styles.addButton, { backgroundColor: addButtonBg }]} onPress={onAddEvent}>
         <Text style={[styles.addButtonText, { color: addButtonText }]}>Add Event</Text>

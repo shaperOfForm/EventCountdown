@@ -34,3 +34,5 @@ export const ThemeProvider = ({ hueOffset, children }) => {
 };
 
 export const useTheme = () => useContext(ThemeContext);
+
+export default ThemeProvider;

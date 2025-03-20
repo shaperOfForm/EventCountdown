@@ -23,3 +23,9 @@ export const resetRedirected = () => {
   hasRedirected = false;
   console.log('Redirect flag has been reset.');
 };
+
+export default {
+  hasAlreadyRedirected,
+  markRedirected,
+  resetRedirected,
+};
