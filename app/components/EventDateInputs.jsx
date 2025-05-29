@@ -35,7 +35,7 @@ const DAYS_IN_MONTH = {
   12: 31,
 };
 
-function EventDateInputs({ month, day, year, onDateChange }) {
+export default function EventDateInputs({ month, day, year, onDateChange }) {
   const maxAllowableDate = getMaxAllowableDate();
   const currentYear = new Date().getFullYear();
   const maxYear = maxAllowableDate.getFullYear();
@@ -50,9 +50,6 @@ function EventDateInputs({ month, day, year, onDateChange }) {
   const isLeapYear = (y) =>
     (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
 
-  // Validate the date so that the candidate date is at least tomorrow.
-  // If the selected day exceeds the maximum for the month, set it to the month's last day.
-  // If the candidate date is before tomorrow, adjust accordingly.
   const validateDate = (newMonth, newDay, newYear) => {
     const mm = parseInt(newMonth, 10);
     const dd = parseInt(newDay, 10);
@@ -62,15 +59,11 @@ function EventDateInputs({ month, day, year, onDateChange }) {
     let maxDays = DAYS_IN_MONTH[mm] || 31;
     if (mm === 2 && !isLeapYear(yyyy)) maxDays = 28;
     const validatedDay = dd > maxDays ? maxDays : dd;
-    let candidateDate = new Date(yyyy, mm - 1, validatedDay);
 
-    // Enforce that candidateDate is at least tomorrow.
+    let candidateDate = new Date(yyyy, mm - 1, validatedDay);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    if (candidateDate < tomorrow) {
-      candidateDate = tomorrow;
-    }
-
+    if (candidateDate < tomorrow) candidateDate = tomorrow;
     if (candidateDate > maxAllowableDate) {
       onDateChange(
         String(maxMonth).padStart(2, '0'),
@@ -79,7 +72,6 @@ function EventDateInputs({ month, day, year, onDateChange }) {
       );
       return;
     }
-
     onDateChange(
       String(candidateDate.getMonth() + 1).padStart(2, '0'),
       String(candidateDate.getDate()).padStart(2, '0'),
@@ -92,7 +84,6 @@ function EventDateInputs({ month, day, year, onDateChange }) {
     (_, i) => String(currentYear + i)
   );
 
-  // Determine maximum days in the selected month/year.
   let maxDaysForMonth = DAYS_IN_MONTH[parseInt(month, 10)] || 31;
   if (parseInt(month, 10) === 2 && !isLeapYear(parseInt(year, 10))) {
     maxDaysForMonth = 28;
@@ -102,8 +93,6 @@ function EventDateInputs({ month, day, year, onDateChange }) {
       ? maxDay
       : maxDaysForMonth;
 
-  // Determine the lower bound for days.
-  // If the selected year and month are the current ones, only show days after today.
   let dayLowerBound = 1;
   if (parseInt(year, 10) === thisYear && parseInt(month, 10) === thisMonth) {
     dayLowerBound = thisDay + 1;
@@ -127,12 +116,11 @@ function EventDateInputs({ month, day, year, onDateChange }) {
           itemStyle={{ color: textColor }}
         >
           {MONTH_NAMES.filter((mObj) => {
-            const numericMonth = parseInt(mObj.value, 10);
-            // Exclude months in the past if current year.
-            if (parseInt(year, 10) === thisYear && numericMonth < thisMonth) {
-              return false;
-            }
-            if (parseInt(year, 10) === maxYear && numericMonth > maxMonth) {
+            const m = parseInt(mObj.value, 10);
+            if (
+              (parseInt(year, 10) === thisYear && m < thisMonth) ||
+              (parseInt(year, 10) === maxYear && m > maxMonth)
+            ) {
               return false;
             }
             return true;
@@ -140,6 +128,7 @@ function EventDateInputs({ month, day, year, onDateChange }) {
             <Picker.Item key={mObj.value} label={mObj.label} value={mObj.value} />
           ))}
         </Picker>
+
         <Picker
           selectedValue={day}
           onValueChange={(val) => validateDate(month, val, year)}
@@ -150,6 +139,7 @@ function EventDateInputs({ month, day, year, onDateChange }) {
             <Picker.Item key={d} label={d} value={d} />
           ))}
         </Picker>
+
         <Picker
           selectedValue={year}
           onValueChange={(val) => validateDate(month, day, val)}
@@ -188,5 +178,3 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
-
-export default React.memo(EventDateInputs);

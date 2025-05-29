@@ -1,4 +1,3 @@
-// components/AddEventForm.js
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import EventDateInputs from './EventDateInputs';
@@ -15,7 +14,6 @@ export default function AddEventForm({
   setEventName,
   onAddEvent,
 }) {
-  // Base colors as defined originally:
   const headerColor = useThemedColor('#FFFFFF');
   const inputBg = useThemedColor('#D9E3F0');
   const inputText = useThemedColor('#000000');
@@ -39,12 +37,16 @@ export default function AddEventForm({
         placeholder="Event Name"
         value={eventName}
         onChangeText={setEventName}
-        style={[styles.input, { backgroundColor: inputBg }]}
-        itemStyle={{ color: inputText }}
+        style={[styles.input, { backgroundColor: inputBg, color: inputText }]}
         placeholderTextColor={useThemedColor('#999')}
       />
-      <TouchableOpacity style={[styles.addButton, { backgroundColor: addButtonBg }]} onPress={onAddEvent}>
-        <Text style={[styles.addButtonText, { color: addButtonText }]}>Add Event</Text>
+      <TouchableOpacity
+        style={[styles.addButton, { backgroundColor: addButtonBg }]}
+        onPress={onAddEvent}
+      >
+        <Text style={[styles.addButtonText, { color: addButtonText }]}>
+          Add Event
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -52,7 +54,7 @@ export default function AddEventForm({
 
 const styles = StyleSheet.create({
   formContainer: {
-    backgroundColor: 'rgba(62, 16, 109, 0.4)', // Unchanged card tint (or you can theme it if desired)
+    backgroundColor: 'rgba(62, 16, 109, 0.4)',
     padding: 10,
     borderRadius: 12,
     marginBottom: 10,
@@ -71,11 +73,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
+    marginBottom: 10,
   },
   addButton: {
     borderRadius: 8,
     padding: 10,
-    marginTop: 10,
     alignItems: 'center',
   },
   addButtonText: {

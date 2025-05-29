@@ -1,3 +1,4 @@
+// app/components/EventItem.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
@@ -13,13 +14,18 @@ function formatDateMMDDYYYY(isoDateStr) {
   return `${mm}-${dd}-${yyyy}`;
 }
 
-function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) {
+export default React.memo(function EventItem({
+  event,
+  toggleSlidePanel,
+  deleteEvent,
+  drag,
+  currentTime,
+}) {
   const white = useThemedColor('#FFFFFF');
   const lightGray = useThemedColor('#DDD');
   const countdownColor = useThemedColor('#ff9e9e');
   const detailsButtonBg = useThemedColor('#c4a2f5');
   const buttonTextColor = useThemedColor('#4B1382');
-  const deleteButtonBg = useThemedColor('#ff6b6b');
 
   const displayDate = formatDateMMDDYYYY(event.eventDate);
   const countdownResult = computeAdjustedTime(
@@ -37,16 +43,16 @@ function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) 
   } else {
     const { years, months, weeks, days, hours, totalDays } = countdownResult;
     const parts = [];
-    if (years > 0) parts.push(`${years}y`);
-    if (months > 0) parts.push(`${months}m`);
-    if (weeks > 0) parts.push(`${weeks}w`);
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    const countdownString = parts.length > 0 ? parts.join(',') : '<1h';
+    if (years) parts.push(`${years}y`);
+    if (months) parts.push(`${months}m`);
+    if (weeks) parts.push(`${weeks}w`);
+    if (days) parts.push(`${days}d`);
+    if (hours) parts.push(`${hours}h`);
+    const countdownString = parts.length ? parts.join(',') : '<1h';
     let displayTotalDays;
-    if (totalDays === 0 && (years + months + weeks + days + hours) > 0) {
+    if (totalDays === 0 && parts.length) {
       displayTotalDays = '<1 day';
-    } else if (totalDays > 0 && hours > 0) {
+    } else if (totalDays && hours) {
       displayTotalDays = `<${totalDays + 1} total days`;
     } else {
       displayTotalDays = `${totalDays} total days`;
@@ -61,19 +67,25 @@ function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) 
       </TouchableOpacity>
       <View style={styles.eventDetails}>
         <Text style={[styles.eventName, { color: white }]}>{event.name}</Text>
-        <Text style={[styles.eventDate, { color: lightGray }]}>{displayDate}</Text>
-        <Text style={[styles.countdown, { color: countdownColor }]}>{countdownContent}</Text>
+        <Text style={[styles.eventDate, { color: lightGray }]}>
+          {displayDate}
+        </Text>
+        <Text style={[styles.countdown, { color: countdownColor }]}>
+          {countdownContent}
+        </Text>
       </View>
       <View style={styles.eventActions}>
         <TouchableOpacity
           style={[styles.detailsButton, { backgroundColor: detailsButtonBg }]}
           onPress={() => toggleSlidePanel(event, countdownResult)}
         >
-          <Text style={[styles.buttonText, { color: buttonTextColor }]}>⚙</Text>
+          <Text style={[styles.buttonText, { color: buttonTextColor }]}>
+            ⚙
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => {
+          onPress={() =>
             Alert.alert(
               'Delete event?',
               'Are you sure you want to delete this event?',
@@ -85,15 +97,15 @@ function EventItem({ event, toggleSlidePanel, deleteEvent, drag, currentTime }) 
                   onPress: () => deleteEvent(event.id),
                 },
               ]
-            );
-          }}
+            )
+          }
         >
           <Text style={styles.deleteButtonText}>X</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   eventItem: {
@@ -160,5 +172,3 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
 });
-
-export default React.memo(EventItem);

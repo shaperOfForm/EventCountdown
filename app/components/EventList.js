@@ -1,40 +1,48 @@
+// app/components/EventList.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { getMaxAllowableDate } from '../utils/dateUtils';
 import EventItem from './EventItem';
 
-function EventList({ events, toggleSlidePanel, deleteEvent, handleDragEnd, currentTime }) {
+export default function EventList({
+  events,
+  toggleSlidePanel,
+  deleteEvent,
+  handleDragEnd,
+  currentTime,
+}) {
   const maxDate = getMaxAllowableDate();
-
   const validEvents = events.filter(
-    (event) => new Date(event.eventDate) <= maxDate
+    (e) => new Date(e.eventDate) <= maxDate
   );
 
-  const renderItem = ({ item, drag }) => (
-    <EventItem
-      event={item}
-      toggleSlidePanel={toggleSlidePanel}
-      deleteEvent={deleteEvent}
-      drag={drag}
-      currentTime={currentTime}
-    />
-  );
-
-  return (
-    <View style={styles.eventContainer}>
-      {validEvents.length === 0 ? (
+  if (validEvents.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>
           No valid events added yet. Start by adding one!
         </Text>
-      ) : (
-        <DraggableFlatList
-          data={validEvents}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          onDragEnd={handleDragEnd}
-        />
-      )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.eventContainer}>
+      <DraggableFlatList
+        data={validEvents}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, drag }) => (
+          <EventItem
+            event={item}
+            toggleSlidePanel={toggleSlidePanel}
+            deleteEvent={deleteEvent}
+            drag={drag}
+            currentTime={currentTime}
+          />
+        )}
+        onDragEnd={({ data }) => handleDragEnd({ data })}
+      />
     </View>
   );
 }
@@ -45,7 +53,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   emptyText: {
     textAlign: 'center',
@@ -54,5 +65,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-
-export default React.memo(EventList);

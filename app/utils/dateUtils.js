@@ -1,5 +1,5 @@
 // utils/dateUtils.js
-import { differenceInDays, differenceInHours, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 
 /**
  * Builds a date string in the format "YYYY-MM-DDT08:00:00" representing 8 AM local time.
@@ -11,8 +11,7 @@ export function buildDateString(month, day, year) {
 }
 
 /**
- * Returns the maximum allowable date which is "today + 100 years minus 1 day"
- * and set to 23:59:59.999.
+ * Returns the maximum allowable date: today + 100 years - 1 day at 23:59:59.999.
  */
 export function getMaxAllowableDate() {
   const today = new Date();
@@ -26,7 +25,7 @@ export function getMaxAllowableDate() {
 }
 
 /**
- * Parses a local date time string in the format "YYYY-MM-DDTHH:mm:ss".
+ * Parses a local date time string "YYYY-MM-DDTHH:mm:ss".
  */
 export function parseLocalDateTime(dateStr) {
   const [datePart, timePart = '00:00:00'] = dateStr.split('T');
@@ -36,7 +35,7 @@ export function parseLocalDateTime(dateStr) {
 }
 
 /**
- * Parses a date string in the "YYYY-MM-DD" format as a local date at midnight.
+ * Parses a local date-only string "YYYY-MM-DD" as midnight.
  */
 export function parseLocalDateOnly(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -45,15 +44,14 @@ export function parseLocalDateOnly(dateStr) {
 
 /**
  * Computes the adjusted time remaining until an event by accounting for
- * inactive days (using daySelections) and extra days off.
+ * inactive days (via daySelections) and extra days off, down to hours.
+ * Uses millisecond arithmetic so DST transitions are respected.
  *
- * @param {string} eventDateStr - Event date string in the format "YYYY-MM-DDT08:00:00"
- * @param {number} [daysOff=0] - Additional days to subtract from the countdown.
- * @param {boolean[]} [daySelections=[true, true, true, true, true, false, false]]
- *   - An array for Monday (index 0) through Sunday (index 6). (JavaScript’s getDay() is shifted accordingly.)
- * @param {Date|string} [currentTimeVal=new Date()] - The current time.
- * @returns {object|string} - An object with years, months, weeks, days, hours, totalDays, 
- *   and totalDaysIgnoringDaysOff, or a "Countdown Complete!" message if the event is in the past.
+ * @param {string} eventDateStr - "YYYY-MM-DDTHH:mm:ss" at target time (e.g., 08:00). 
+ * @param {number} daysOff - full days to subtract.
+ * @param {boolean[]} daySelections - Mon (0) ... Sun (6).
+ * @param {Date|string} currentTimeVal - Date or ISO string.
+ * @returns {object|string} - { years, months, weeks, days, hours, totalDays } or 'Countdown Complete!'
  */
 export function computeAdjustedTime(
   eventDateStr,
@@ -67,56 +65,50 @@ export function computeAdjustedTime(
       ? parseLocalDateTime(currentTimeVal)
       : currentTimeVal;
 
-  // If the event is in the past or exactly now, return completion.
   if (eventDate <= now) {
     return 'Countdown Complete!';
   }
 
-  // Compute raw difference in days and remaining hours.
-  const totalDaysRaw = differenceInDays(eventDate, now);
-  const remainingHours = differenceInHours(eventDate, now) % 24;
+  // Millisecond difference (accounts for DST)
+  const msDiff = eventDate.getTime() - now.getTime();
+  const totalHoursRaw = Math.floor(msDiff / (1000 * 60 * 60));
+  const totalDaysRaw = Math.floor(msDiff / (1000 * 60 * 60 * 24));
 
-  // Count inactive days based on daySelections.
+  // Count inactive calendar days
   let inactiveDays = 0;
-  let tempDate = new Date(now);
+  let temp = new Date(now);
   for (let i = 0; i < totalDaysRaw; i++) {
-    tempDate = addDays(tempDate, 1);
-    // Adjust JavaScript’s getDay() to have Monday as index 0.
-    const dayIndex = (tempDate.getDay() + 6) % 7;
-    if (!daySelections[dayIndex]) {
-      inactiveDays++;
-    }
+    temp = addDays(temp, 1);
+    const dayIndex = (temp.getDay() + 6) % 7;
+    if (!daySelections[dayIndex]) inactiveDays++;
   }
 
-  // totalDaysIgnoringDaysOff excludes subtraction of daysOff
-  const totalDaysIgnoringDaysOff = totalDaysRaw - inactiveDays;
-
-  // totalDays includes daysOff
-  let totalDays = totalDaysIgnoringDaysOff - daysOff;
-  if (totalDays < 0) totalDays = 0;
-
-  if (totalDays === 0 && remainingHours === 0) {
+  // Compute total active hours after removing inactive days and daysOff
+  const hoursAfterInactive = totalHoursRaw - inactiveDays * 24;
+  const totalActiveHours = hoursAfterInactive - daysOff * 24;
+  if (totalActiveHours <= 0) {
     return 'Countdown Complete!';
   }
 
-  // Breakdown active days into years, months, weeks, and days.
-  const years = Math.floor(totalDays / 365);
-  const remainingAfterYears = totalDays % 365;
-  const months = Math.floor(remainingAfterYears / 30);
-  const remainingAfterMonths = remainingAfterYears % 30;
-  const weeks = Math.floor(remainingAfterMonths / 7);
-  const days = remainingAfterMonths % 7;
+  // Breakdown into days and hours
+  const days = Math.floor(totalActiveHours / 24);
+  const hours = totalActiveHours % 24;
+
+  // Further breakdown days into y/m/w/d (approximate months = 30 days)
+  const years = Math.floor(days / 365);
+  const remAfterYears = days % 365;
+  const months = Math.floor(remAfterYears / 30);
+  const remAfterMonths = remAfterYears % 30;
+  const weeks = Math.floor(remAfterMonths / 7);
+  const remDays = remAfterMonths % 7;
 
   return {
     years,
     months,
     weeks,
-    days,
-    hours: remainingHours,
-    // Actual countdown (subtracting daysOff).
-    totalDays,
-    // The total ignoring 'daysOff', for use in UI (e.g., maxDaysOff).
-    totalDaysIgnoringDaysOff,
+    days: remDays,
+    hours,
+    totalDays: days,
   };
 }
 
