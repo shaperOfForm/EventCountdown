@@ -1,11 +1,10 @@
 // app/HomeScreen.js
-import 'react-native-get-random-values'; // polyfill for uuid on Hermes
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Alert, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 import { parseISO, isValid, isAfter } from 'date-fns';
 import { buildDateString, computeAdjustedTime } from './utils/dateUtils';
 import {
@@ -18,14 +17,20 @@ import EventList from './components/EventList';
 import EventDetailPanel from './components/EventDetailPanel';
 import { useThemedColor } from './useThemedColor';
 
+// Helper to generate UUID across web/native
+const uuidv4 = () => {
+  // randomUUID is supported on modern browsers & Expo runtimes
+  return Crypto.randomUUID();
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const gradientColors = [useThemedColor('#792DE7'), useThemedColor('#4B1382')];
   const containerBg = useThemedColor('#792DE7');
 
-  // Default to tomorrow at 08:00
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  // Default form date: tomorrow at 08:00
+  const today = new Date();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const defaultMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
   const defaultDay = String(tomorrow.getDate()).padStart(2, '0');
   const defaultYear = String(tomorrow.getFullYear());
@@ -41,7 +46,7 @@ export default function HomeScreen() {
   const [slideAnimation] = useState(new Animated.Value(300));
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Load saved events on mount
+  // Load events from storage once
   useEffect(() => {
     (async () => {
       try {
@@ -53,7 +58,7 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // Update currentTime on the hour
+  // Update currentTime at the top of each hour
   useEffect(() => {
     let timer;
     const tick = () => {
@@ -75,7 +80,7 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect to full-screen countdown if homepageEventId is set
+  // Redirect logic for homepage countdown
   useEffect(() => {
     if (!events.length) return;
     (async () => {
@@ -113,7 +118,7 @@ export default function HomeScreen() {
     })();
   }, [events, router, currentTime]);
 
-  // Slide-in panel handlers
+  // Panel open/close animations
   const toggleSlidePanel = (event, countdown) => {
     setSelectedEventId(event.id);
     setSelectedEventCountdown(countdown);
@@ -123,7 +128,6 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start();
   };
-
   const closeSlidePanel = useCallback(() => {
     Animated.timing(slideAnimation, {
       toValue: 300,
@@ -135,7 +139,7 @@ export default function HomeScreen() {
     });
   }, [slideAnimation]);
 
-  // Add new event
+  // Add a new event
   const addEvent = async () => {
     let dateStr;
     try {
@@ -152,15 +156,16 @@ export default function HomeScreen() {
       return Alert.alert('Invalid Date', 'Please enter a future date.');
     }
 
-    const usedNumbers = new Set(
+    // Generate default name if none provided
+    const usedNums = new Set(
       events
         .map((e) => e.name.match(/^Event #(\d+)$/)?.[1])
         .filter(Boolean)
         .map(Number)
     );
-    let nextNum = 1;
-    while (usedNumbers.has(nextNum)) nextNum++;
-    const name = eventName.trim() || `Event #${nextNum}`;
+    let idx = 1;
+    while (usedNums.has(idx)) idx++;
+    const name = eventName.trim() || `Event #${idx}`;
 
     const newEv = {
       id: uuidv4(),
@@ -171,6 +176,7 @@ export default function HomeScreen() {
       isHomepageChecked: false,
     };
 
+    // Update state and persist
     const updated = [...events, newEv];
     setEvents(updated);
     try {
@@ -179,13 +185,14 @@ export default function HomeScreen() {
       console.warn('Failed to save event');
     }
 
+    // Reset form
     setEventName('');
     setMonth(defaultMonth);
     setDay(defaultDay);
     setYear(defaultYear);
   };
 
-  // Update event date
+  // Other CRUD handlers
   const updateEventDate = async (id, newDate) => {
     try {
       const updated = events.map((e) =>
@@ -197,8 +204,6 @@ export default function HomeScreen() {
       Alert.alert('Error', 'Could not update date.');
     }
   };
-
-  // Update days off
   const updateDaysOff = async (id, daysOff) => {
     try {
       const updated = events.map((e) =>
@@ -210,15 +215,13 @@ export default function HomeScreen() {
       Alert.alert('Error', 'Could not update days off.');
     }
   };
-
-  // Update day selections
-  const updateDaySelection = async (id, idx, isSelected) => {
+  const updateDaySelection = async (id, idx, sel) => {
     try {
       const updated = events.map((e) => {
         if (e.id === id) {
-          const sel = [...e.daySelections];
-          sel[idx] = isSelected;
-          return { ...e, daySelections: sel };
+          const arr = [...e.daySelections];
+          arr[idx] = sel;
+          return { ...e, daySelections: arr };
         }
         return e;
       });
@@ -228,8 +231,6 @@ export default function HomeScreen() {
       Alert.alert('Error', 'Could not update selections.');
     }
   };
-
-  // Delete an event
   const deleteEvent = async (id) => {
     try {
       const updated = events.filter((e) => e.id !== id);
@@ -244,8 +245,6 @@ export default function HomeScreen() {
       Alert.alert('Error', 'Could not delete event.');
     }
   };
-
-  // Toggle homepage setting
   const toggleHomepage = useCallback(
     async (id, countdown) => {
       try {
@@ -255,13 +254,13 @@ export default function HomeScreen() {
         }));
         setEvents(updated);
         await AsyncStorage.setItem('allEvents', JSON.stringify(updated));
-
         const toggled = updated.find((e) => e.id === id);
         if (toggled.isHomepageChecked) {
           await AsyncStorage.setItem('homepageEventId', id);
           markRedirected();
-          const fresh = countdown
-            || computeAdjustedTime(
+          const fresh =
+            countdown ||
+            computeAdjustedTime(
               toggled.eventDate,
               toggled.daysOff,
               toggled.daySelections,
@@ -287,8 +286,6 @@ export default function HomeScreen() {
     },
     [events, router, currentTime]
   );
-
-  // Handle drag end
   const handleDragEnd = useCallback(
     async ({ data }) => {
       setEvents(data);

@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+// components/EventDateInputs.js
+import React, { useMemo } from 'react';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import PropTypes from 'prop-types';
 import { Picker } from '@react-native-picker/picker';
 import { getMaxAllowableDate } from '../utils/dateUtils';
@@ -21,132 +22,140 @@ const MONTH_NAMES = [
 ];
 
 const DAYS_IN_MONTH = {
-  1: 31,
-  2: 29,
-  3: 31,
-  4: 30,
-  5: 31,
-  6: 30,
-  7: 31,
-  8: 31,
-  9: 30,
-  10: 31,
-  11: 30,
-  12: 31,
+  1: 31, 2: 29, 3: 31, 4: 30, 5: 31, 6: 30,
+  7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31,
 };
 
+// Base width that design mockups target
+const GUIDELINE_BASE_WIDTH = 350;
+
 export default function EventDateInputs({ month, day, year, onDateChange }) {
-  const maxAllowableDate = getMaxAllowableDate();
+  // compute scale factor and responsive font size
+  const { width } = useWindowDimensions();
+  const scale = (size) => (width / GUIDELINE_BASE_WIDTH) * size;
+  const fontSize = Math.round(scale(10));  // adjust base font size here
+
+  // theme colors
+  const inputBg = useThemedColor('#BFC7FF');
+  const textColor = useThemedColor('#000000');
+
+  // compute bounds
+  const maxDate = getMaxAllowableDate();
   const currentYear = new Date().getFullYear();
-  const maxYear = maxAllowableDate.getFullYear();
-  const maxMonth = maxAllowableDate.getMonth() + 1;
-  const maxDay = maxAllowableDate.getDate();
+  const maxYear = maxDate.getFullYear();
+  const maxMonth = maxDate.getMonth() + 1;
+  const maxDay = maxDate.getDate();
 
   const today = new Date();
   const thisYear = today.getFullYear();
   const thisMonth = today.getMonth() + 1;
   const thisDay = today.getDate();
 
-  const isLeapYear = (y) =>
-    (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+  const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
 
-  const validateDate = (newMonth, newDay, newYear) => {
-    const mm = parseInt(newMonth, 10);
-    const dd = parseInt(newDay, 10);
-    const yyyy = parseInt(newYear, 10);
-    if (isNaN(mm) || isNaN(dd) || isNaN(yyyy)) return;
+  const validateDate = (newM, newD, newY) => {
+    const mm = parseInt(newM, 10),
+          dd = parseInt(newD, 10),
+          yy = parseInt(newY, 10);
+    if (isNaN(mm)||isNaN(dd)||isNaN(yy)) return;
+    let maxD = DAYS_IN_MONTH[mm] || 31;
+    if (mm === 2 && !isLeap(yy)) maxD = 28;
+    const dayC = dd > maxD ? maxD : dd;
 
-    let maxDays = DAYS_IN_MONTH[mm] || 31;
-    if (mm === 2 && !isLeapYear(yyyy)) maxDays = 28;
-    const validatedDay = dd > maxDays ? maxDays : dd;
-
-    let candidateDate = new Date(yyyy, mm - 1, validatedDay);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (candidateDate < tomorrow) candidateDate = tomorrow;
-    if (candidateDate > maxAllowableDate) {
+    let cand = new Date(yy, mm - 1, dayC);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    if (cand < tomorrow) cand = tomorrow;
+    if (cand > maxDate) {
       onDateChange(
-        String(maxMonth).padStart(2, '0'),
-        String(maxDay).padStart(2, '0'),
+        String(maxMonth).padStart(2,'0'),
+        String(maxDay).padStart(2,'0'),
         String(maxYear)
       );
       return;
     }
     onDateChange(
-      String(candidateDate.getMonth() + 1).padStart(2, '0'),
-      String(candidateDate.getDate()).padStart(2, '0'),
-      String(candidateDate.getFullYear())
+      String(cand.getMonth()+1).padStart(2,'0'),
+      String(cand.getDate()).padStart(2,'0'),
+      String(cand.getFullYear())
     );
   };
 
-  const yearList = Array.from(
-    { length: maxYear - currentYear + 1 },
-    (_, i) => String(currentYear + i)
+  const yearList = useMemo(
+    () => Array.from(
+      { length: maxYear - currentYear + 1 },
+      (_, i) => String(currentYear + i)
+    ),
+    [currentYear, maxYear]
   );
 
-  let maxDaysForMonth = DAYS_IN_MONTH[parseInt(month, 10)] || 31;
-  if (parseInt(month, 10) === 2 && !isLeapYear(parseInt(year, 10))) {
-    maxDaysForMonth = 28;
+  // day bounds
+  let maxDays = DAYS_IN_MONTH[parseInt(month,10)] || 31;
+  if (parseInt(month,10)===2 && !isLeap(parseInt(year,10))) maxDays=28;
+  const dayUpper = (parseInt(year,10)===maxYear && parseInt(month,10)===maxMonth)
+    ? maxDay
+    : maxDays;
+  let dayLower = 1;
+  if (parseInt(year,10)===thisYear && parseInt(month,10)===thisMonth) {
+    dayLower = thisDay+1;
   }
-  const dayUpperBound =
-    parseInt(year, 10) === maxYear && parseInt(month, 10) === maxMonth
-      ? maxDay
-      : maxDaysForMonth;
-
-  let dayLowerBound = 1;
-  if (parseInt(year, 10) === thisYear && parseInt(month, 10) === thisMonth) {
-    dayLowerBound = thisDay + 1;
-  }
-
-  const dayOptions = [];
-  for (let d = dayLowerBound; d <= dayUpperBound; d++) {
-    dayOptions.push(String(d).padStart(2, '0'));
-  }
-
-  const inputBg = useThemedColor('#BFC7FF');
-  const textColor = useThemedColor('#000000');
+  const daysOptions = [];
+  for (let d=dayLower; d<=dayUpper; d++) daysOptions.push(String(d).padStart(2,'0'));
 
   return (
     <View style={styles.container}>
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={month}
-          onValueChange={(val) => validateDate(val, day, year)}
-          style={[styles.picker, { backgroundColor: inputBg }]}
-          itemStyle={{ color: textColor }}
+          onValueChange={(v) => validateDate(v, day, year)}
+          style={[
+            styles.picker,
+            { backgroundColor: inputBg, fontSize }
+          ]}
+          itemStyle={{ color: textColor, fontSize }}
         >
-          {MONTH_NAMES.filter((mObj) => {
-            const m = parseInt(mObj.value, 10);
-            if (
-              (parseInt(year, 10) === thisYear && m < thisMonth) ||
-              (parseInt(year, 10) === maxYear && m > maxMonth)
-            ) {
-              return false;
-            }
-            return true;
-          }).map((mObj) => (
-            <Picker.Item key={mObj.value} label={mObj.label} value={mObj.value} />
-          ))}
+          {MONTH_NAMES
+            .filter(m => {
+              const mNum = parseInt(m.value,10);
+              if (
+                (parseInt(year,10)===thisYear && mNum < thisMonth) ||
+                (parseInt(year,10)===maxYear && mNum > maxMonth)
+              ) return false;
+              return true;
+            })
+            .map(m => (
+              <Picker.Item
+                key={m.value}
+                label={m.label}
+                value={m.value}
+              />
+            ))
+          }
         </Picker>
 
         <Picker
           selectedValue={day}
-          onValueChange={(val) => validateDate(month, val, year)}
-          style={[styles.picker, { backgroundColor: inputBg }]}
-          itemStyle={{ color: textColor }}
+          onValueChange={(v) => validateDate(month, v, year)}
+          style={[
+            styles.picker,
+            { backgroundColor: inputBg, fontSize }
+          ]}
+          itemStyle={{ color: textColor, fontSize }}
         >
-          {dayOptions.map((d) => (
+          {daysOptions.map(d => (
             <Picker.Item key={d} label={d} value={d} />
           ))}
         </Picker>
 
         <Picker
           selectedValue={year}
-          onValueChange={(val) => validateDate(month, day, val)}
-          style={[styles.picker, { backgroundColor: inputBg }]}
-          itemStyle={{ color: textColor }}
+          onValueChange={(v) => validateDate(month, day, v)}
+          style={[
+            styles.picker,
+            { backgroundColor: inputBg, fontSize }
+          ]}
+          itemStyle={{ color: textColor, fontSize }}
         >
-          {yearList.map((y) => (
+          {yearList.map(y => (
             <Picker.Item key={y} label={y} value={y} />
           ))}
         </Picker>
