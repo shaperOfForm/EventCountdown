@@ -8,12 +8,12 @@ function Header({ title, onClose }) {
   return (
     <View style={styles.headerContainer}>
       <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
-      <TouchableOpacity onPress={onClose}
+      {/*<TouchableOpacity onPress={onClose}
         style={styles.closeTouch}
         accessibilityRole="button"
         accessibilityLabel="Close">
         <Text style={[styles.closeButton, { color: closeColor }]}>X</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
     </View>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import EventDateInputs from './EventDateInputs';
 import { useThemedColor } from '../useThemedColor';
+import { HueOffsetSlider } from '../_layout';
 
 export default function AddEventForm({
   month,
@@ -23,6 +24,7 @@ export default function AddEventForm({
   return (
     <View style={styles.formContainer}>
       <Text style={[styles.formHeader, { color: headerColor }]}>Add New Event</Text>
+      <HueOffsetSlider style={{ marginVertical: -20 }} />
       <EventDateInputs
         month={month}
         day={day}
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
   formHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 0,
     textAlign: 'center',
   },
   input: {

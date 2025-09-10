@@ -285,14 +285,14 @@ export default function FullScreenCountdown() {
             hideLabel
             valueStyle={{ fontSize: scaleFont(26) }}
           />
-          <View style={styles.checkboxContainer}>
+          {/*<View style={styles.checkboxContainer}>
             <Checkbox
               value={dailyEnabled}
               onValueChange={handleToggleDaily}
               color={dailyEnabled ? "#4630EB" : undefined}
             />
             <Text style={styles.checkboxLabel}>Turn on daily notifications</Text>
-          </View>
+          </View>*/}
           <View style={styles.buttonContainer}>
             <Button
               title="Back to Main Menu"

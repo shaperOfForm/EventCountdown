@@ -13,7 +13,7 @@ const useScale = () => {
   return (size) => (width / guidelineBaseWidth) * size;
 };
 
-const HueOffsetSlider = ({ style }) => {
+export const HueOffsetSlider = ({ style }) => {
   const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
   const scale = useScale();
   const sliderHeight = scale(40);
@@ -22,12 +22,8 @@ const HueOffsetSlider = ({ style }) => {
   const endInset = sliderHeight / 2;
 
   return (
-      <View style={[
-        styles.sliderOverlay,
-        style,
-        { bottom: -sliderHeight / 1.5 - trackHeight}
-      ]}>
-      <View style={[styles.sliderWrapper, { paddingVertical: scale(10), paddingHorizontal: inset }]}>
+    <View style={[styles.sliderOverlay, style]}>
+    <View style={[styles.sliderWrapper, { paddingVertical: scale(1), paddingHorizontal: inset }]}>
         <View
           style={[
             styles.gradientTrack,
@@ -88,7 +84,6 @@ export default function Layout() {
             accessibilityLabel="Decorative header image"
             accessible
           />
-          <HueOffsetSlider />
         </View>
         <View style={styles.contentContainer}>
           <Stack screenOptions={{ headerShown: false }} />
@@ -117,21 +112,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sliderOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 20,
-  },
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
   sliderWrapper: {
     width: '80%',
     position: 'relative',
+    marginVertical: 0,
   },
   gradientTrack: {
     position: 'absolute',
-    top: '35%',
+    top: '27.5%',
     overflow: 'hidden',
     zIndex: 30,
   },

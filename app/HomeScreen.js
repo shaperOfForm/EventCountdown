@@ -16,6 +16,8 @@ import AddEventForm from './components/AddEventForm';
 import EventList from './components/EventList';
 import EventDetailPanel from './components/EventDetailPanel';
 import { useThemedColor } from './useThemedColor';
+import { HueOffsetSlider } from './_layout';
+
 
 export default function HomeScreen() {
   const router = useRouter();
