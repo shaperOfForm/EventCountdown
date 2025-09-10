@@ -16,14 +16,14 @@ const useScale = () => {
 export const HueOffsetSlider = ({ style }) => {
   const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
   const scale = useScale();
-  const sliderHeight = scale(40);
+  const sliderHeight = scale(20);
   const trackHeight = scale(4);
   const inset = scale(20);
   const endInset = sliderHeight / 2;
 
   return (
     <View style={[styles.sliderOverlay, style]}>
-    <View style={[styles.sliderWrapper, { paddingVertical: scale(1), paddingHorizontal: inset }]}>
+    <View style={[styles.sliderWrapper, { paddingVertical: 0, paddingHorizontal: 0 }]}>
         <View
           style={[
             styles.gradientTrack,
@@ -53,7 +53,7 @@ export const HueOffsetSlider = ({ style }) => {
           />
         </View>
         <Slider
-          style={[styles.slider, { height: sliderHeight, width: '100%' }]}
+          style={[styles.slider, { height: sliderHeight, width: '100%', marginHorizontal: endInset }]}
           minimumValue={0}
           maximumValue={360} // Updated to cover the full hue range
           step={1}
@@ -119,16 +119,18 @@ const styles = StyleSheet.create({
   sliderWrapper: {
     width: '80%',
     position: 'relative',
-    marginVertical: 0,
+    marginTop: 15,
+    marginBottom: 20,
   },
   gradientTrack: {
     position: 'absolute',
-    top: '27.5%',
+    top: '10%',
     overflow: 'hidden',
     zIndex: 30,
   },
   slider: {
     width: '100%',
+    top: 2.5,
     zIndex: 30,
   },
 });

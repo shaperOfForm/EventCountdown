@@ -24,7 +24,7 @@ export default function AddEventForm({
   return (
     <View style={styles.formContainer}>
       <Text style={[styles.formHeader, { color: headerColor }]}>Add New Event</Text>
-      <HueOffsetSlider style={{ marginVertical: -20 }} />
+      <HueOffsetSlider style={{ marginVertical: -22.5 }} />
       <EventDateInputs
         month={month}
         day={day}
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   formHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 0,
+    marginBottom: -7.5,
     textAlign: 'center',
   },
   input: {
