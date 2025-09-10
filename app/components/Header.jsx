@@ -8,7 +8,10 @@ function Header({ title, onClose }) {
   return (
     <View style={styles.headerContainer}>
       <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
-      <TouchableOpacity onPress={onClose}>
+      <TouchableOpacity onPress={onClose}
+        style={styles.closeTouch}
+        accessibilityRole="button"
+        accessibilityLabel="Close">
         <Text style={[styles.closeButton, { color: closeColor }]}>X</Text>
       </TouchableOpacity>
     </View>
@@ -17,6 +20,7 @@ function Header({ title, onClose }) {
 
 const styles = StyleSheet.create({
   headerContainer: {
+    paddingBottom: 17,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -28,9 +32,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    flexShrink: 1,
+    top: 17,
+  },
+  closeTouch: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButton: {
     fontSize: 24,
+    lineHeight: 24,
+    textAlign: 'center',
+    top: 17,
   },
 });
 

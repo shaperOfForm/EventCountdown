@@ -1,6 +1,6 @@
 // app/components/EventItem.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { parseISO, isValid } from 'date-fns';
 import { computeAdjustedTime } from '../utils/dateUtils';
 import { useThemedColor } from '../useThemedColor';
@@ -26,6 +26,8 @@ export default React.memo(function EventItem({
   const countdownColor = useThemedColor('#ff9e9e');
   const detailsButtonBg = useThemedColor('#c4a2f5');
   const buttonTextColor = useThemedColor('#4B1382');
+  const homeBadgeBg = useThemedColor('#FFD54F');   // light gold/yellow
+  const homeBadgeText = useThemedColor('#4B1382'); // your purple
 
   const displayDate = formatDateMMDDYYYY(event.eventDate);
   const countdownResult = computeAdjustedTime(
@@ -62,7 +64,22 @@ export default React.memo(function EventItem({
 
   return (
     <View style={styles.eventItem}>
-      <TouchableOpacity onLongPress={drag} style={styles.dragHandle}>
+      {event.isHomepageChecked && (
+        <View style={styles.homeBadge}
+          accessibilityLabel="Homepage event"
+          accessible
+          pointerEvents="none"
+          >
+            <Text style={[styles.homeBadgeText, { color: homeBadgeBg }]}>★</Text>
+        </View>
+      )}
+      <TouchableOpacity
+      onPressIn={Platform.OS === 'web' ? drag : undefined}   // start drag on desktop
+  onLongPress={Platform.OS === 'web' ? undefined : drag} // start drag on mobile
+      delayPressIn={120}
+      style={styles.dragHandle}
+      accessibilityRole="button"
+      accessibilityLabel="Reorder">
         <Text style={[styles.dragIcon, { color: white }]}>≡</Text>
       </TouchableOpacity>
       <View style={styles.eventDetails}>
@@ -85,20 +102,26 @@ export default React.memo(function EventItem({
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() =>
-            Alert.alert(
-              'Delete event?',
-              'Are you sure you want to delete this event?',
-              [
-                { text: 'Cancel', style: 'cancel' },
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              if (window.confirm('Delete this event?')) {
+                deleteEvent(event.id);
+              }
+            } else {
+              Alert.alert(
+                'Delete event?',
+                'Are you sure you want to delete this event?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
                 {
                   text: 'Delete',
                   style: 'destructive',
                   onPress: () => deleteEvent(event.id),
                 },
               ]
-            )
+            );
           }
+        }}
         >
           <Text style={styles.deleteButtonText}>X</Text>
         </TouchableOpacity>
@@ -126,9 +149,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    cursor: 'grab',
   },
   dragIcon: {
     fontSize: 20,
+    userSelect: 'none',
   },
   eventDetails: {
     flex: 1,

@@ -1,11 +1,10 @@
 // app/HomeScreen.js
-import 'react-native-get-random-values'; // polyfill for uuid on Hermes
+import * as Crypto from 'expo-crypto';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Alert, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { v4 as uuidv4 } from 'uuid';
 import { parseISO, isValid, isAfter } from 'date-fns';
 import { buildDateString, computeAdjustedTime } from './utils/dateUtils';
 import {
@@ -163,7 +162,7 @@ export default function HomeScreen() {
     const name = eventName.trim() || `Event #${nextNum}`;
 
     const newEv = {
-      id: uuidv4(),
+      id: Crypto.randomUUID(),
       name,
       eventDate: dateStr,
       daysOff: 0,
@@ -341,9 +340,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   gradientBackground: {
     flex: 1,
+    minHeight: 0,
   },
   container: {
     flex: 1,
     padding: 5,
+    minHeight: 0,
   },
 });

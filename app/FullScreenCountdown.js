@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, Alert, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Button, Alert, StyleSheet, Dimensions, Platform } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { computeAdjustedTime } from './utils/dateUtils';
@@ -15,6 +15,12 @@ import * as Notifications from 'expo-notifications';
 const { width } = Dimensions.get('window');
 const guidelineBaseWidth = 350;
 const scale = size => (width / guidelineBaseWidth) * size;
+
+// New helper just for font sizes
+const scaleFont = (size) => {
+  const scaled = scale(size);
+  return Math.min(Math.max(scaled, size * 0.85), size * 1.25);
+};
 
 export default function FullScreenCountdown() {
   const router = useRouter();
@@ -89,19 +95,34 @@ export default function FullScreenCountdown() {
 
   // Schedule a one-time notification for the event time (works even in the background)
   useEffect(() => {
+  (async () => {
+    if (Platform.OS === 'web') return; // web: not supported
     const eventDateObj = parseISO(eventDate);
-    if (isValid(eventDateObj) && isFuture(eventDateObj)) {
+    if (!isValid(eventDateObj) || !isFuture(eventDateObj)) return;
+
+    try {
+      const isAvail = await Notifications.isAvailableAsync?.();
+      if (isAvail === false) return;
+
       const secondsUntilEvent = Math.ceil((eventDateObj.getTime() - Date.now()) / 1000);
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Event Reached',
-          body: `The event "${eventName}" has been reached.`,
-          sound: 'default',
-        },
+      if (secondsUntilEvent <= 0) return;
+
+      let { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        ({ status } = await Notifications.requestPermissionsAsync());
+      }
+      if (status !== 'granted') return;
+
+      await Notifications.scheduleNotificationAsync({
+        content: { title: 'Event Reached', body: `The event "${eventName}" has been reached.`, sound: 'default' },
         trigger: { seconds: secondsUntilEvent },
       });
+    } catch (e) {
+      console.warn('Notification scheduling failed:', e);
     }
-  }, [eventName, eventDate]);
+  })();
+}, [eventName, eventDate]);
+
 
   // Update current time every minute so we can recalc the countdown
   useEffect(() => {
@@ -154,7 +175,10 @@ export default function FullScreenCountdown() {
 
   // Function to schedule a daily notification (fires at 9:00 AM daily)
   const scheduleDailyNotification = async () => {
+    if (Platform.OS === 'web') return; // not supported
     try {
+      const isAvail = await Notifications.isAvailableAsync?.();
+      if (isAvail === false) return;
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Daily Reminder',
@@ -171,6 +195,7 @@ export default function FullScreenCountdown() {
 
   // Function to cancel the daily notification
   const cancelDailyNotification = async () => {
+    if (Platform.OS === 'web') return;
     if (dailyNotificationId) {
       try {
         await Notifications.cancelScheduledNotificationAsync(dailyNotificationId);
@@ -183,6 +208,11 @@ export default function FullScreenCountdown() {
 
   // When the checkbox is toggled on, check/request permissions if necessary before scheduling daily notifications.
   const handleToggleDaily = async (newValue) => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not available on web', 'Daily notifications require a native build (iOS/Android).');
+      setDailyEnabled(false);
+      return;
+    }
     if (newValue) {
       const { status } = await Notifications.getPermissionsAsync();
       if (status !== 'granted') {
@@ -253,7 +283,7 @@ export default function FullScreenCountdown() {
           <TimeRemaining
             timeRemaining={finalCountdown}
             hideLabel
-            valueStyle={{ fontSize: scale(26) }}
+            valueStyle={{ fontSize: scaleFont(26) }}
           />
           <View style={styles.checkboxContainer}>
             <Checkbox
@@ -297,13 +327,13 @@ const styles = StyleSheet.create({
     padding: scale(20),
   },
   title: {
-    fontSize: scale(32),
+    fontSize: scaleFont(32),
     fontWeight: 'bold',
     marginBottom: scale(10),
     textAlign: 'center',
   },
   date: {
-    fontSize: scale(24),
+    fontSize: scaleFont(24),
     marginBottom: scale(20),
     textAlign: 'center',
   },
@@ -318,7 +348,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     color: '#FFF',
-    fontSize: scale(16),
+    fontSize: scaleFont(16),
     marginLeft: scale(8),
   },
 });

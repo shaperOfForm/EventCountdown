@@ -13,22 +13,31 @@ const useScale = () => {
   return (size) => (width / guidelineBaseWidth) * size;
 };
 
-const HueOffsetSlider = () => {
+const HueOffsetSlider = ({ style }) => {
   const { hueOffset, setHueOffset } = useContext(HueOffsetContext);
   const scale = useScale();
+  const sliderHeight = scale(40);
+  const trackHeight = scale(4);
+  const inset = scale(20);
+  const endInset = sliderHeight / 2;
 
   return (
-    <View style={styles.sliderOverlay}>
-      <View style={[styles.sliderWrapper, { padding: scale(10) }]}>
+      <View style={[
+        styles.sliderOverlay,
+        style,
+        { bottom: -sliderHeight / 1.5 - trackHeight}
+      ]}>
+      <View style={[styles.sliderWrapper, { paddingVertical: scale(10), paddingHorizontal: inset }]}>
         <View
           style={[
             styles.gradientTrack,
             {
-              left: scale(20),
-              right: scale(20),
-              height: scale(4),
+              left: endInset,
+              right: endInset,
+              height: trackHeight,
               borderRadius: scale(3),
               transform: [{ translateY: scale(7.5) }],
+
             },
           ]}
         >
@@ -48,7 +57,7 @@ const HueOffsetSlider = () => {
           />
         </View>
         <Slider
-          style={[styles.slider, { height: scale(40) }]}
+          style={[styles.slider, { height: sliderHeight, width: '100%' }]}
           minimumValue={0}
           maximumValue={360} // Updated to cover the full hue range
           step={1}
@@ -79,11 +88,11 @@ export default function Layout() {
             accessibilityLabel="Decorative header image"
             accessible
           />
+          <HueOffsetSlider />
         </View>
         <View style={styles.contentContainer}>
           <Stack screenOptions={{ headerShown: false }} />
         </View>
-        <HueOffsetSlider />
       </View>
     </HueOffsetProvider>
   );
@@ -96,21 +105,25 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     width: '100%',
+    maxHeight: 80,
+    position: 'relative',
+    zIndex: 10,
   },
   headerImage: {
-    flex: 1,
     width: '100%',
+    height: '100%',
   },
   contentContainer: {
     flex: 1,
   },
   sliderOverlay: {
     position: 'absolute',
-    top: '7.225%',
     left: 0,
     right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 20,
   },
   sliderWrapper: {
     width: '80%',
@@ -118,12 +131,12 @@ const styles = StyleSheet.create({
   },
   gradientTrack: {
     position: 'absolute',
-    top: '50%',
+    top: '35%',
     overflow: 'hidden',
-    zIndex: 0,
+    zIndex: 30,
   },
   slider: {
     width: '100%',
-    zIndex: 1,
+    zIndex: 30,
   },
 });

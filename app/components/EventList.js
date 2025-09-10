@@ -30,6 +30,7 @@ export default function EventList({
   return (
     <View style={styles.eventContainer}>
       <DraggableFlatList
+      style={{ flex: 1, overflowY: 'auto' }}
         data={validEvents}
         keyExtractor={(item) => item.id}
         renderItem={({ item, drag }) => (
@@ -42,6 +43,11 @@ export default function EventList({
           />
         )}
         onDragEnd={({ data }) => handleDragEnd({ data })}
+        activationDistance={1}
+        activationDelay={0}
+        dragItemOverflow
+        enableAutoscroll
+        autoscrollThreshold={40}
       />
     </View>
   );
@@ -50,9 +56,11 @@ export default function EventList({
 const styles = StyleSheet.create({
   eventContainer: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: 'transparent',
     borderRadius: 10,
     padding: 10,
+    overflowY: 'scroll',
   },
   emptyContainer: {
     flex: 1,
